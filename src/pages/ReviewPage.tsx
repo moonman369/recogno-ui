@@ -3,7 +3,7 @@ import { useReviewDueCount, useReviewQueue } from '../api/queries';
 import type { ReviewQueueItem } from '../api/types';
 import { PageHeader } from '../components/PageHeader';
 import { HeroFigure, StatTile } from '../components/StatTile';
-import { Badge, Button, Card, EmptyState, ErrorState, Loading } from '../components/ui';
+import { Badge, Button, Card, EmptyState, ErrorState, Skeleton } from '../components/ui';
 import { MODE_LABEL, absoluteTime, cx, isDue, relativeTime } from '../lib/format';
 
 export function ReviewPage() {
@@ -26,7 +26,20 @@ export function ReviewPage() {
         }
       />
 
-      {counts.isPending ? <Loading /> : null}
+      {counts.isPending ? (
+        <Card className="mb-8">
+          <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-10">
+            <div>
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="mt-2 h-12 w-20" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Skeleton className="h-20" />
+              <Skeleton className="h-20" />
+            </div>
+          </div>
+        </Card>
+      ) : null}
       {counts.isError ? (
         <ErrorState error={counts.error} onRetry={() => void counts.refetch()} />
       ) : null}
@@ -67,7 +80,20 @@ export function ReviewPage() {
         </Card>
       ) : null}
 
-      {queue.isPending ? <Loading label="Loading your queue…" /> : null}
+      {queue.isPending ? (
+        <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+          {Array.from({ length: 5 }, (_, index) => (
+            <li key={index} className="flex items-center gap-3 px-4 py-3.5">
+              <div className="flex-1">
+                <Skeleton className="h-3.5 w-1/3" />
+                <Skeleton className="mt-2 h-3 w-1/4" />
+              </div>
+              <Skeleton className="h-5 w-14 rounded-full" />
+              <Skeleton className="h-3 w-16" />
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {queue.isError ? <ErrorState error={queue.error} onRetry={() => void queue.refetch()} /> : null}
 
       {queue.data ? (
@@ -122,10 +148,11 @@ function QueueSection({
           highlight ? 'border-accent/30' : 'border-line',
         )}
       >
-        {items.map((item) => (
+        {items.map((item, index) => (
           <li
             key={`${item.problemId}-${item.mode}`}
-            className="flex flex-wrap items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-raised"
+            className="animate-rise flex flex-wrap items-center gap-3 px-4 py-3 transition-colors duration-200 hover:bg-surface-raised"
+            style={{ animationDelay: `${Math.min(index, 10) * 35}ms` }}
           >
             <div className="min-w-0 flex-1">
               <Link

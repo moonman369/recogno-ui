@@ -27,6 +27,17 @@
 
   --shadow-raised: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px -12px oklch(0 0 0 / 0.5);
   --shadow-pop: 0 4px 12px oklch(0 0 0 / 0.35), 0 16px 40px -16px oklch(0 0 0 / 0.55);
+  --shadow-float: 0 8px 20px oklch(0 0 0 / 0.3), 0 28px 60px -20px oklch(0 0 0 / 0.6);
+
+  /*
+   * Easing. Nothing here is `ease` or `linear`:
+   *   expo  — long decelerating settle, for entrances travelling a distance
+   *   quint — shorter settle, for small state changes
+   *   spring— slight overshoot, only for things that should feel physical
+   */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 @layer base {
@@ -67,9 +78,64 @@
   scrollbar-color: var(--color-line-strong) transparent;
 }
 
+/* -- glass ---------------------------------------------------------------
+ * Reserved for surfaces that float above content: the nav, the hero's focal
+ * panels, menus. Ordinary cards stay opaque — glass everywhere is glass
+ * nowhere, and translucency over a scrolling page costs legibility.
+ *
+ * The inset hairline is what sells it: a lit top edge reads as a pane catching
+ * light, where a plain border reads as a box.
+ */
+@utility glass {
+  background-color: color-mix(in oklab, var(--color-surface) 74%, transparent);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid color-mix(in oklab, var(--color-ink) 9%, transparent);
+  box-shadow:
+    var(--shadow-float),
+    inset 0 1px 0 color-mix(in oklab, var(--color-ink) 8%, transparent);
+}
+
+@utility glass-nav {
+  background-color: color-mix(in oklab, var(--color-canvas) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--color-ink) 7%, transparent);
+}
+
+/* Where the browser cannot blur, fall back to near-opaque so ink stays legible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background-color: color-mix(in oklab, var(--color-surface) 97%, transparent);
+  }
+  .glass-nav {
+    background-color: color-mix(in oklab, var(--color-canvas) 98%, transparent);
+  }
+}
+
 /* Staggered entrance for lists and page sections. */
 @utility animate-rise {
-  animation: rise 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise 0.42s var(--ease-expo) both;
+}
+
+/* -- scroll reveal -------------------------------------------------------
+ * Only transform and opacity, so every frame stays on the compositor and
+ * nothing triggers layout. `will-change` is set while hidden and dropped on
+ * arrival, so we do not pin a layer for the life of the page.
+ */
+@utility reveal-hidden {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  will-change: opacity, transform;
+}
+
+@utility reveal-shown {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s var(--ease-expo),
+    transform 0.7s var(--ease-expo);
+  will-change: auto;
 }
 
 @keyframes rise {
@@ -83,6 +149,151 @@
   }
 }
 
+/* Skeleton placeholders breathe rather than pulse — less twitchy in peripheral vision. */
+@utility animate-shimmer {
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Score bars grow to their value, so a grade reads as measured rather than asserted. */
+@utility animate-grow {
+  animation: grow 0.7s var(--ease-quint) both;
+}
+
+/* -- hero: the pattern loop ---------------------------------------------
+ * A 12s cycle split into three 4s scenes. Every child animation shares the
+ * 12s period (or a factor of it) so the whole thing stays phase-locked and
+ * never drifts, however long the tab is open.
+ */
+@utility animate-scene {
+  animation: scene-cycle 12s var(--ease-quint) infinite both;
+}
+
+@keyframes scene-cycle {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  3%,
+  28% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  33%,
+  100% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@utility animate-sweep {
+  animation: sweep 4s var(--ease-quint) infinite;
+}
+
+@keyframes sweep {
+  0%,
+  8% {
+    transform: translateX(0);
+  }
+  75%,
+  100% {
+    transform: translateX(152px);
+  }
+}
+
+@utility animate-converge-left {
+  animation: converge-left 4s var(--ease-quint) infinite;
+}
+
+@keyframes converge-left {
+  0%,
+  8% {
+    transform: translateX(0);
+  }
+  70%,
+  100% {
+    transform: translateX(114px);
+  }
+}
+
+@utility animate-converge-right {
+  animation: converge-right 4s var(--ease-quint) infinite;
+}
+
+@keyframes converge-right {
+  0%,
+  8% {
+    transform: translateX(0);
+  }
+  70%,
+  100% {
+    transform: translateX(-114px);
+  }
+}
+
+@utility animate-ripple {
+  animation: ripple 4s var(--ease-expo) infinite;
+}
+
+@keyframes ripple {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  15% {
+    opacity: 0.7;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+/* Ambient light behind the hero. Long period, tiny movement — presence, not motion. */
+@utility animate-drift {
+  animation: drift 22s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(4%, 3%, 0) scale(1.12);
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The drill verdict. Spring overshoot, used here and nowhere else. */
+@keyframes verdict-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -90,5 +301,20 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /*
+   * The blanket rule above would land every scene of the hero loop on its
+   * final keyframe — which is opacity 0 — leaving the visual empty. Freeze it
+   * on the first scene instead, so it becomes a still illustration.
+   */
+  [data-scene] {
+    animation: none !important;
+    opacity: 0;
+    transform: none !important;
+  }
+
+  [data-scene='0'] {
+    opacity: 1;
   }
 }

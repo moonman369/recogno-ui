@@ -1,6 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { inputClass } from '../../components/ui';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Kbd } from '../../components/ui';
 import { normalizeSlug, type PatternChoice, type PatternGroup } from '../../lib/patternCatalog';
+import { loadRecentPatterns } from '../../lib/recentPatterns';
 import { cx } from '../../lib/format';
 
 export type PatternPickerProps = {
@@ -17,6 +18,10 @@ export type PatternPickerProps = {
   disabled?: boolean;
 };
 
+export type PatternPickerHandle = {
+  focusFilter: () => void;
+};
+
 export function PatternPicker({
   groups,
   selected,
@@ -26,10 +31,14 @@ export function PatternPicker({
   gradedOnly,
   onGradedOnlyChange,
   disabled,
-}: PatternPickerProps) {
+  filterRef,
+}: PatternPickerProps & { filterRef?: React.RefObject<HTMLInputElement | null> }) {
   const [filter, setFilter] = useState('');
   const [coreOnly, setCoreOnly] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [cursor, setCursor] = useState(0);
+
+  const listRef = useRef<HTMLDivElement>(null);
 
   const choiceByKey = useMemo(() => {
     const map = new Map<string, PatternChoice>();
@@ -39,9 +48,22 @@ export function PatternPicker({
     return map;
   }, [groups]);
 
+  // Pinned above everything else: the handful this user actually reaches for.
+  const recentGroup = useMemo<PatternGroup | null>(() => {
+    const choices = loadRecentPatterns()
+      .map((key) => choiceByKey.get(key))
+      .filter((choice): choice is PatternChoice => choice !== undefined);
+    return choices.length > 0 ? { name: 'Recent', choices } : null;
+  }, [choiceByKey]);
+
+  const allGroups = useMemo(
+    () => (recentGroup ? [recentGroup, ...groups] : groups),
+    [recentGroup, groups],
+  );
+
   const visibleGroups = useMemo(() => {
     const needle = normalizeSlug(filter);
-    return groups
+    return allGroups
       .map((group) => ({
         name: group.name,
         choices: group.choices.filter((choice) => {
@@ -56,13 +78,23 @@ export function PatternPicker({
         }),
       }))
       .filter((group) => group.choices.length > 0);
-  }, [groups, filter, coreOnly, gradedOnly]);
+  }, [allGroups, filter, coreOnly, gradedOnly]);
+
+  /** Flattened order the arrow keys walk. */
+  const flat = useMemo(
+    () => visibleGroups.flatMap((group) => group.choices),
+    [visibleGroups],
+  );
+
+  // Keep the cursor inside the list as filters narrow it.
+  useEffect(() => {
+    setCursor((current) => (current >= flat.length ? 0 : current));
+  }, [flat.length]);
 
   const selectedChoices = selected
     .map((key) => choiceByKey.get(key))
     .filter((choice): choice is PatternChoice => choice !== undefined);
 
-  const totalVisible = visibleGroups.reduce((sum, group) => sum + group.choices.length, 0);
   const searching = filter.trim().length > 0;
 
   function toggleCollapsed(name: string) {
@@ -74,6 +106,36 @@ export function PatternPicker({
     });
   }
 
+  function moveCursor(delta: number) {
+    if (flat.length === 0) return;
+    const next = (cursor + delta + flat.length) % flat.length;
+    setCursor(next);
+    listRef.current
+      ?.querySelector(`[data-index="${next}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }
+
+  /** Arrow keys walk the list, Enter picks — all without leaving the filter box. */
+  function handleFilterKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      moveCursor(1);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveCursor(-1);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const choice = flat[cursor];
+      if (choice) onToggle(choice);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      if (filter) setFilter('');
+      else event.currentTarget.blur();
+    }
+  }
+
+  let runningIndex = -1;
+
   return (
     <div>
       {selectedChoices.length > 0 ? (
@@ -84,8 +146,10 @@ export function PatternPicker({
               <span
                 key={choice.key}
                 className={cx(
-                  'inline-flex items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-1.5 text-xs',
-                  isPrimary ? 'border-accent bg-accent/15 text-ink' : 'border-line text-ink-muted',
+                  'animate-rise inline-flex items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-1.5 text-xs',
+                  isPrimary
+                    ? 'border-accent bg-accent-soft text-ink'
+                    : 'border-line bg-surface text-ink-muted',
                 )}
               >
                 {choice.id !== null ? (
@@ -95,14 +159,17 @@ export function PatternPicker({
                     onClick={() => onSetPrimary(choice)}
                     title={isPrimary ? 'Graded pick' : 'Make this the graded pick'}
                     className={cx(
-                      'leading-none',
+                      'leading-none transition-colors',
                       isPrimary ? 'text-accent' : 'text-ink-faint hover:text-accent',
                     )}
                   >
                     {isPrimary ? '★' : '☆'}
                   </button>
                 ) : (
-                  <span title="Not in the worker's taxonomy — recorded as context" className="text-ink-faint">
+                  <span
+                    title="Not in the worker's taxonomy — recorded as context"
+                    className="text-ink-faint"
+                  >
                     ○
                   </span>
                 )}
@@ -112,7 +179,7 @@ export function PatternPicker({
                   disabled={disabled}
                   onClick={() => onToggle(choice)}
                   aria-label={`Remove ${choice.name}`}
-                  className="rounded-full px-1 text-ink-faint hover:text-negative"
+                  className="rounded-full px-1 text-ink-faint transition-colors hover:text-negative"
                 >
                   ×
                 </button>
@@ -122,15 +189,23 @@ export function PatternPicker({
         </div>
       ) : null}
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-          placeholder="Filter patterns…"
-          disabled={disabled}
-          className={cx(inputClass, 'flex-1 min-w-48')}
-        />
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-48 flex-1">
+          <input
+            ref={filterRef}
+            type="search"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            onKeyDown={handleFilterKeyDown}
+            placeholder="Filter patterns…"
+            disabled={disabled}
+            className="w-full rounded-lg border border-line bg-canvas py-2 pl-3 pr-9 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
+          />
+          <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
+            <Kbd>/</Kbd>
+          </span>
+        </div>
+
         <FilterChip active={coreOnly} onClick={() => setCoreOnly(!coreOnly)} disabled={disabled}>
           Core 20
         </FilterChip>
@@ -143,17 +218,27 @@ export function PatternPicker({
         </FilterChip>
       </div>
 
-      <div className="max-h-[26rem] overflow-y-auto rounded-lg border border-line scrollbar-slim">
+      <div
+        ref={listRef}
+        className="max-h-[22rem] overflow-y-auto rounded-lg border border-line bg-canvas/40 scrollbar-slim"
+      >
         {visibleGroups.map((group) => {
           const isCollapsed = collapsed.has(group.name) && !searching;
+          const isRecent = group.name === 'Recent';
+
           return (
             <section key={group.name}>
               <button
                 type="button"
                 onClick={() => toggleCollapsed(group.name)}
-                className="sticky top-0 z-10 flex w-full items-center justify-between gap-2 border-b border-line bg-surface-raised px-3 py-1.5 text-left"
+                className="sticky top-0 z-10 flex w-full items-center justify-between gap-2 border-b border-line bg-surface-raised/95 px-3 py-1.5 text-left backdrop-blur-sm"
               >
-                <span className="text-xs font-semibold uppercase tracking-widest text-ink-faint">
+                <span
+                  className={cx(
+                    'text-[11px] font-semibold uppercase tracking-widest',
+                    isRecent ? 'text-accent' : 'text-ink-faint',
+                  )}
+                >
                   {group.name}
                 </span>
                 <span className="text-xs text-ink-faint">
@@ -164,33 +249,41 @@ export function PatternPicker({
 
               {isCollapsed ? null : (
                 <div className="grid grid-cols-1 gap-1.5 p-2 sm:grid-cols-2">
-                  {group.choices.map((choice) => (
-                    <ChoiceButton
-                      key={`${group.name}:${choice.key}`}
-                      choice={choice}
-                      selected={selected.includes(choice.key)}
-                      primary={choice.key === primaryKey}
-                      disabled={disabled}
-                      onClick={() => onToggle(choice)}
-                    />
-                  ))}
+                  {group.choices.map((choice) => {
+                    runningIndex += 1;
+                    return (
+                      <ChoiceButton
+                        key={`${group.name}:${choice.key}`}
+                        index={runningIndex}
+                        choice={choice}
+                        selected={selected.includes(choice.key)}
+                        primary={choice.key === primaryKey}
+                        active={runningIndex === cursor}
+                        disabled={disabled}
+                        onClick={() => onToggle(choice)}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </section>
           );
         })}
 
-        {totalVisible === 0 ? (
-          <p className="py-10 text-center text-sm text-ink-faint">
-            Nothing matches those filters.
-          </p>
+        {flat.length === 0 ? (
+          <p className="py-10 text-center text-sm text-ink-faint">Nothing matches those filters.</p>
         ) : null}
       </div>
 
-      <p className="mt-2 text-xs text-ink-faint">
-        Pick every pattern the problem combines. ★ marks the one that gets graded — it has to come
-        from <strong className="font-medium text-ink-muted">Graded taxonomy</strong>. Dashed
-        entries marked <span className="uppercase">tag</span> are context only and cannot be graded.
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint">
+        <span>
+          ★ is graded · dashed <span className="uppercase">tag</span> entries are context only
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Kbd>↑</Kbd>
+          <Kbd>↓</Kbd> move
+          <Kbd>↵</Kbd> pick
+        </span>
       </p>
     </div>
   );
@@ -200,12 +293,16 @@ function ChoiceButton({
   choice,
   selected,
   primary,
+  active,
+  index,
   disabled,
   onClick,
 }: {
   choice: PatternChoice;
   selected: boolean;
   primary: boolean;
+  active: boolean;
+  index: number;
   disabled?: boolean;
   onClick: () => void;
 }) {
@@ -216,20 +313,21 @@ function ChoiceButton({
       type="button"
       role="checkbox"
       aria-checked={selected}
+      data-index={index}
       disabled={disabled}
       onClick={onClick}
       title={gradeable ? undefined : 'Not in the graded taxonomy — travels as context only'}
       className={cx(
-        'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-sm transition-colors',
+        'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-sm transition-all duration-150',
         'disabled:cursor-not-allowed disabled:opacity-50',
         primary
-          ? 'border-accent bg-accent/15 text-ink'
+          ? 'border-accent bg-accent-soft text-ink'
           : selected
             ? 'border-accent/50 bg-accent/5 text-ink'
             : gradeable
-              ? 'border-line bg-surface text-ink-muted hover:border-ink-faint hover:text-ink'
-              : // Visibly secondary: these cannot carry the graded guess.
-                'border-dashed border-line/70 bg-transparent text-ink-faint hover:border-ink-faint hover:text-ink-muted',
+              ? 'border-line bg-surface text-ink-muted hover:border-line-strong hover:text-ink'
+              : 'border-dashed border-line/70 bg-transparent text-ink-faint hover:border-ink-faint hover:text-ink-muted',
+        active && 'ring-1 ring-accent/60',
       )}
     >
       <span className={cx('text-xs leading-none', selected ? 'text-accent' : 'text-ink-faint')}>
@@ -273,8 +371,8 @@ function FilterChip({
       className={cx(
         'rounded-lg border px-2.5 py-2 text-xs transition-colors disabled:opacity-50',
         active
-          ? 'border-accent bg-accent/15 text-ink'
-          : 'border-line text-ink-muted hover:border-ink-faint hover:text-ink',
+          ? 'border-accent bg-accent-soft text-ink'
+          : 'border-line text-ink-muted hover:border-line-strong hover:text-ink',
       )}
     >
       {children}

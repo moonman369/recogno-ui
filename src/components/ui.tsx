@@ -10,9 +10,10 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANTS: Record<NonNullable<ButtonProps['variant']>, string> = {
-  primary: 'bg-accent text-canvas shadow-raised hover:bg-accent-strong active:translate-y-px',
+  primary:
+    'bg-accent text-canvas shadow-raised hover:bg-accent-strong hover:shadow-float hover:-translate-y-px',
   secondary:
-    'bg-surface-raised text-ink border border-line hover:border-line-strong active:translate-y-px',
+    'bg-surface-raised text-ink border border-line hover:border-line-strong hover:-translate-y-px',
   ghost: 'text-ink-muted hover:text-ink hover:bg-surface-raised',
   danger: 'bg-negative/15 text-negative border border-negative/40 hover:bg-negative/25',
 };
@@ -21,8 +22,11 @@ export function Button({ variant = 'primary', size = 'md', className, ...props }
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors',
-        'disabled:cursor-not-allowed disabled:opacity-45',
+        'inline-flex items-center justify-center gap-2 rounded-lg font-medium',
+        // Lifts on hover, presses on click. Transform and shadow only — both
+        // composited, so neither costs a layout pass.
+        'transition-all duration-200 ease-[var(--ease-quint)] active:translate-y-0 active:scale-[0.98]',
+        'disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0',
         size === 'sm' ? 'px-3 py-1.5 text-sm' : 'px-4 py-2 text-sm',
         VARIANTS[variant],
         className,
@@ -34,9 +38,24 @@ export function Button({ variant = 'primary', size = 'md', className, ...props }
 
 /* -- surfaces ----------------------------------------------------------- */
 
-export function Card({ className, children }: { className?: string; children: ReactNode }) {
+export function Card({
+  className,
+  children,
+  /**
+   * Frosted rather than opaque. For surfaces that float above the page — menus,
+   * hero panels, the sign-in card. Content-bearing cards stay opaque, because
+   * translucency over a scrolling background costs legibility.
+   */
+  glass = false,
+}: {
+  className?: string;
+  children: ReactNode;
+  glass?: boolean;
+}) {
   return (
-    <div className={cx('rounded-xl border border-line bg-surface p-5', className)}>{children}</div>
+    <div className={cx('rounded-xl p-5', glass ? 'glass' : 'border border-line bg-surface', className)}>
+      {children}
+    </div>
   );
 }
 
@@ -102,6 +121,51 @@ export function Loading({ label = 'Loading…' }: { label?: string }) {
       <Spinner />
       {label}
     </div>
+  );
+}
+
+/**
+ * A placeholder shaped like the content that is coming.
+ *
+ * Preferred over a spinner wherever the layout is known ahead of time: it holds
+ * the space, so arriving data does not shove the page around.
+ */
+export function Skeleton({ className }: { className?: string }) {
+  return <div aria-hidden className={cx('animate-shimmer rounded-md bg-surface-raised', className)} />;
+}
+
+export function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
+  return (
+    <div className={cx('space-y-2', className)}>
+      {Array.from({ length: lines }, (_, index) => (
+        <Skeleton
+          key={index}
+          className={cx('h-3', index === lines - 1 ? 'w-2/3' : 'w-full')}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* -- keyboard ----------------------------------------------------------- */
+
+/** A key cap. Used to advertise shortcuts inline rather than hiding them in a help modal. */
+export function Kbd({ children }: { children: ReactNode }) {
+  return (
+    <kbd className="inline-flex min-w-5 items-center justify-center rounded border border-line bg-surface-raised px-1.5 py-0.5 font-sans text-[10px] font-medium leading-none text-ink-faint">
+      {children}
+    </kbd>
+  );
+}
+
+export function ShortcutHint({ keys, children }: { keys: ReactNode[]; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-ink-faint">
+      {keys.map((key, index) => (
+        <Kbd key={index}>{key}</Kbd>
+      ))}
+      <span className="ml-0.5">{children}</span>
+    </span>
   );
 }
 

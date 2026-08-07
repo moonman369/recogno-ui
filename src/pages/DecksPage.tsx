@@ -9,7 +9,8 @@ import {
   EmptyState,
   ErrorState,
   Field,
-  Loading,
+  Skeleton,
+  SkeletonText,
   inputClass,
   textareaClass,
 } from '../components/ui';
@@ -95,7 +96,17 @@ export function DecksPage() {
         </Card>
       ) : null}
 
-      {decks.isPending ? <Loading label="Loading your decks…" /> : null}
+      {decks.isPending ? (
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {Array.from({ length: 4 }, (_, index) => (
+            <li key={index} className="rounded-xl border border-line bg-surface p-5">
+              <Skeleton className="h-4 w-1/2" />
+              <SkeletonText lines={2} className="mt-4" />
+              <Skeleton className="mt-5 h-3 w-20" />
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {decks.isError ? <ErrorState error={decks.error} onRetry={() => void decks.refetch()} /> : null}
 
       {decks.data ? (
@@ -111,11 +122,17 @@ export function DecksPage() {
           />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
-            {decks.data.decks.map((deck) => (
-              <li key={deck.id}>
+            {decks.data.decks.map((deck, index) => (
+              <li
+                key={deck.id}
+                className="animate-rise"
+                // Staggered so the grid resolves in reading order instead of
+                // appearing as one block.
+                style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+              >
                 <Link
                   to={`/decks/${deck.id}`}
-                  className="group flex h-full flex-col rounded-xl border border-line bg-surface p-5 transition-all hover:border-line-strong hover:shadow-raised"
+                  className="group flex h-full flex-col rounded-xl border border-line bg-surface p-5 transition-all duration-300 ease-[var(--ease-quint)] hover:-translate-y-1 hover:border-line-strong hover:shadow-float"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span className="font-medium text-ink group-hover:text-accent">{deck.name}</span>

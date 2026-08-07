@@ -19,8 +19,8 @@ export function Layout() {
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-20 border-b border-line bg-canvas/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-3 sm:gap-6">
+      <header className="glass-nav sticky top-0 z-20">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3 sm:gap-6">
           <Link to="/" aria-label="Recogno home">
             <Brand className="shrink-0" />
           </Link>
@@ -57,7 +57,7 @@ export function Layout() {
         </div>
       </header>
 
-      <main key={pathname} className="animate-rise mx-auto max-w-5xl px-6 py-10">
+      <main key={pathname} className="animate-rise mx-auto max-w-6xl px-6 py-10">
         <Outlet />
       </main>
     </div>
@@ -125,7 +125,7 @@ function AccountMenu() {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-60 overflow-hidden rounded-xl border border-line bg-surface shadow-lg"
+          className="glass animate-rise absolute right-0 mt-2 w-60 overflow-hidden rounded-xl"
         >
           <div className="border-b border-line px-3 py-2.5">
             <p className="truncate text-sm text-ink">{label}</p>

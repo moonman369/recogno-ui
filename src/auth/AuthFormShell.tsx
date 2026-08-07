@@ -16,20 +16,30 @@ export function AuthFormShell({
   footer?: ReactNode;
 }) {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
-      <Link to="/" className="mb-6 inline-flex w-fit" aria-label="Recogno home">
+    <div className="relative mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
+      {/* Same ambient light as the landing page, so sign-in feels continuous with it. */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="animate-drift absolute -top-32 left-1/2 size-[38rem] -translate-x-1/2 rounded-full bg-accent/10 blur-[120px]" />
+      </div>
+
+      <Link to="/" className="relative mb-6 inline-flex w-fit" aria-label="Recogno home">
         <Brand />
       </Link>
 
-      <Card className="animate-rise shadow-raised">
+      <Card glass className="animate-rise relative">
         <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-ink-faint">{subtitle}</p> : null}
         <div className="mt-6 space-y-4">{children}</div>
       </Card>
 
-      {footer ? <div className="mt-4 text-center text-sm text-ink-faint">{footer}</div> : null}
+      {footer ? (
+        <div className="relative mt-4 text-center text-sm text-ink-faint">{footer}</div>
+      ) : null}
 
-      <Link to="/" className="mt-6 text-center text-xs text-ink-faint hover:text-ink">
+      <Link
+        to="/"
+        className="relative mt-6 text-center text-xs text-ink-faint transition-colors hover:text-ink"
+      >
         ← What is Recogno?
       </Link>
     </div>

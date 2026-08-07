@@ -33,10 +33,31 @@ function render(overrides: Partial<AuthContextValue> = {}): string {
 }
 
 describe('HomePage', () => {
-  it('leads with the product name and a one-line intro', () => {
+  it('leads with the product name, the headline and the value proposition', () => {
     const html = render();
     expect(html).toContain('Recogno');
-    expect(html).toContain('spaced-repetition trainer');
+    expect(html).toContain('Start recognising');
+    expect(html).toContain('Spaced-repetition pattern recognition');
+  });
+
+  it('renders the focal pattern visual with an accessible description', () => {
+    const html = render();
+    // The animation is decorative to a sighted user but carries the pitch, so
+    // it has to be describable rather than aria-hidden.
+    expect(html).toContain('role="img"');
+    expect(html).toContain('sliding window');
+    expect(html).toContain('Sliding window');
+    expect(html).toContain('Two pointers');
+    expect(html).toContain('Breadth-first search');
+  });
+
+  it('renders revealed content when IntersectionObserver is unavailable', () => {
+    // The safety property: if the reveal machinery cannot run, sections must
+    // still be visible rather than stuck at opacity 0.
+    expect(typeof IntersectionObserver).toBe('undefined');
+    const html = render();
+    expect(html).not.toContain('reveal-hidden');
+    expect(html).toContain('The drill loop');
   });
 
   it('includes the user guide: the loop, the scoring, and where things live', () => {

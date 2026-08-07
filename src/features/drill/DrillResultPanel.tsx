@@ -1,8 +1,9 @@
 import type { DrillResult } from '../../api/types';
 import { ReviewSummary } from '../../components/ReviewSummary';
-import { Badge, Button, Card, SectionTitle } from '../../components/ui';
-import { percent } from '../../lib/format';
+import { Badge, Button, Card, Kbd, SectionTitle } from '../../components/ui';
+import { cx, percent } from '../../lib/format';
 import type { PatternChoice } from '../../lib/patternCatalog';
+import { SCORE_WEIGHTS, scoreTone } from '../../lib/scoring';
 import { GradationOverride } from './GradationOverride';
 
 const VERDICT_LABEL = {
@@ -55,10 +56,26 @@ export function DrillResultPanel({
 
   return (
     <div className="space-y-4">
-      <Card className={correct ? 'border-positive/40' : 'border-negative/40'}>
+      <Card
+        className={cx(
+          'animate-rise',
+          correct ? 'border-positive/40' : 'border-negative/40',
+        )}
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Badge tone={correct ? 'positive' : 'negative'}>{correct ? 'Correct' : 'Missed'}</Badge>
+            {/* The verdict is the payoff of the whole loop — it lands with a
+                slight overshoot rather than simply appearing. */}
+            <span
+              className="inline-block"
+              style={{
+                animation: 'verdict-pop 0.45s var(--ease-spring) both',
+              }}
+            >
+              <Badge tone={correct ? 'positive' : 'negative'}>
+                {correct ? 'Correct' : 'Missed'}
+              </Badge>
+            </span>
             <p className="text-lg font-semibold">{actualPattern.name}</p>
           </div>
           {misses.length > 0 ? (
@@ -116,10 +133,20 @@ export function DrillResultPanel({
         </SectionTitle>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <ScoreTile label="Correctness" value={scores.correctness} weight="50%" />
-          <ScoreTile label="Speed" value={scores.speed} weight="20%" />
-          <ScoreTile label="Rationale" value={scores.rationale} weight="30%" />
-          <ScoreTile label="Composite" value={scores.composite} emphasis />
+          <ScoreTile
+            label="Correctness"
+            value={scores.correctness}
+            weight={SCORE_WEIGHTS.correctness}
+            delay={0}
+          />
+          <ScoreTile
+            label="Rationale"
+            value={scores.rationale}
+            weight={SCORE_WEIGHTS.rationale}
+            delay={80}
+          />
+          <ScoreTile label="Speed" value={scores.speed} weight={SCORE_WEIGHTS.speed} delay={160} />
+          <ScoreTile label="Composite" value={scores.composite} emphasis delay={260} />
         </div>
       </Card>
 
@@ -129,35 +156,63 @@ export function DrillResultPanel({
 
       <Button onClick={onNext} disabled={advancing} className="w-full">
         {advancing ? 'Loading…' : 'Next problem'}
+        <Kbd>N</Kbd>
       </Button>
     </div>
   );
 }
+
+const SCORE_FILL = {
+  positive: 'bg-positive',
+  caution: 'bg-caution',
+  negative: 'bg-negative',
+} as const;
 
 function ScoreTile({
   label,
   value,
   weight,
   emphasis,
+  delay,
 }: {
   label: string;
   value: number;
-  weight?: string;
+  /** Share of the composite, as a fraction. Omitted on the composite itself. */
+  weight?: number;
   emphasis?: boolean;
+  delay: number;
 }) {
-  const tone = value >= 0.75 ? 'bg-positive' : value >= 0.4 ? 'bg-caution' : 'bg-negative';
+  const tone = scoreTone(value);
 
   return (
-    <div className="rounded-lg border border-line bg-canvas p-3">
-      <div className="flex items-baseline justify-between">
+    <div
+      className={cx(
+        'animate-rise rounded-lg border p-3',
+        emphasis ? 'border-line-strong bg-surface-raised' : 'border-line bg-canvas',
+      )}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div className="flex items-baseline justify-between gap-2">
         <span className="text-xs text-ink-faint">{label}</span>
-        {weight ? <span className="text-[10px] text-ink-faint">{weight}</span> : null}
+        {weight !== undefined ? (
+          <span className="text-[10px] text-ink-faint">{percent(weight)}</span>
+        ) : null}
       </div>
-      <p className={emphasis ? 'mt-1 font-mono text-xl' : 'mt-1 font-mono text-lg'}>
+
+      <p
+        className={cx(
+          'mt-1 font-semibold tracking-tight',
+          emphasis ? 'text-2xl text-ink' : 'text-xl text-ink-muted',
+        )}
+      >
         {percent(value)}
       </p>
+
       <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-raised">
-        <div className={`h-full ${tone}`} style={{ width: `${Math.round(value * 100)}%` }} />
+        <div
+          className={cx('animate-grow h-full origin-left rounded-full', SCORE_FILL[tone])}
+          style={{ width: `${Math.round(value * 100)}%`, animationDelay: `${delay + 120}ms` }}
+        />
       </div>
     </div>
   );
