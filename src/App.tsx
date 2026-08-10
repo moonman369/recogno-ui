@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { RedirectIfAuthenticated, RequireAuth } from './auth/RequireAuth';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DrillPage } from './pages/DrillPage';
 import { DecksPage } from './pages/DecksPage';
@@ -17,6 +18,14 @@ export default function App() {
     <Routes>
       {/* Public. Doubles as the signed-in landing, so it adapts rather than redirecting. */}
       <Route path="/" element={<HomePage />} />
+
+      {/*
+        Where OAUTH_SUCCESS_REDIRECT lands. Deliberately outside both guards:
+        RequireAuth would bounce it to /login before the session is confirmed,
+        and RedirectIfAuthenticated would skip straight past it on success,
+        losing the error and cancellation states it exists to show.
+      */}
+      <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
       <Route element={<RedirectIfAuthenticated />}>
         <Route path="/login" element={<LoginPage />} />

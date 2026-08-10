@@ -160,7 +160,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession]);
 
   const startGoogleSignIn = useCallback(() => {
-    // A 302 to Google cannot be followed by fetch — hand the browser over.
+    // Server-driven authorization-code flow: a full-page handover, not a fetch
+    // and not a popup. The backend owns the code exchange and redirects back to
+    // OAUTH_SUCCESS_REDIRECT, which this app serves at /auth/callback.
     window.location.href = `${BASE_URL}/auth/google`;
   }, []);
 

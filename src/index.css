@@ -170,12 +170,13 @@
 }
 
 /* -- hero: the pattern loop ---------------------------------------------
- * A 12s cycle split into three 4s scenes. Every child animation shares the
- * 12s period (or a factor of it) so the whole thing stays phase-locked and
- * never drifts, however long the tab is open.
+ * An 18s cycle split into six 3s scenes. Every child animation runs on a 3s
+ * period, which divides 18 exactly, so each scene is at phase zero whenever it
+ * becomes visible — the loop never drifts however long the tab is open.
+ * Staggered children carry `sceneDelay + stagger` for the same reason.
  */
 @utility animate-scene {
-  animation: scene-cycle 12s var(--ease-quint) infinite both;
+  animation: scene-cycle 18s var(--ease-quint) infinite both;
 }
 
 @keyframes scene-cycle {
@@ -183,12 +184,12 @@
     opacity: 0;
     transform: scale(0.98);
   }
-  3%,
-  28% {
+  1.5%,
+  13% {
     opacity: 1;
     transform: scale(1);
   }
-  33%,
+  16.6%,
   100% {
     opacity: 0;
     transform: scale(0.98);
@@ -196,7 +197,7 @@
 }
 
 @utility animate-sweep {
-  animation: sweep 4s var(--ease-quint) infinite;
+  animation: sweep 3s var(--ease-quint) infinite;
 }
 
 @keyframes sweep {
@@ -211,7 +212,7 @@
 }
 
 @utility animate-converge-left {
-  animation: converge-left 4s var(--ease-quint) infinite;
+  animation: converge-left 3s var(--ease-quint) infinite;
 }
 
 @keyframes converge-left {
@@ -226,7 +227,7 @@
 }
 
 @utility animate-converge-right {
-  animation: converge-right 4s var(--ease-quint) infinite;
+  animation: converge-right 3s var(--ease-quint) infinite;
 }
 
 @keyframes converge-right {
@@ -241,7 +242,7 @@
 }
 
 @utility animate-ripple {
-  animation: ripple 4s var(--ease-expo) infinite;
+  animation: ripple 3s var(--ease-expo) infinite;
 }
 
 @keyframes ripple {
@@ -256,6 +257,71 @@
   100% {
     opacity: 0;
     transform: scale(2.6);
+  }
+}
+
+/*
+ * Binary search on answer: the range halves, twice. Done as translate + scaleX
+ * against a left transform-origin rather than animating `width`, so it stays a
+ * composited transform instead of a geometry change every frame.
+ */
+@utility animate-halve {
+  animation: halve 3s var(--ease-quint) infinite;
+}
+
+@keyframes halve {
+  0%,
+  22% {
+    transform: translateX(0) scaleX(1);
+  }
+  38%,
+  58% {
+    transform: translateX(133px) scaleX(0.5);
+  }
+  74%,
+  100% {
+    transform: translateX(199.5px) scaleX(0.25);
+  }
+}
+
+/* Monotonic stack: bars collapse as a taller one arrives and pops them off. */
+@utility animate-pop-bar {
+  animation: pop-bar 3s var(--ease-quint) infinite;
+}
+
+@keyframes pop-bar {
+  0%,
+  18% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  42%,
+  100% {
+    opacity: 0.2;
+    transform: scaleY(0.35);
+  }
+}
+
+/* Heap: a value sifting down the tree, one level at a time. */
+@utility animate-sift {
+  animation: sift 3s var(--ease-quint) infinite;
+}
+
+@keyframes sift {
+  0%,
+  10% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  22%,
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  55%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
   }
 }
 
