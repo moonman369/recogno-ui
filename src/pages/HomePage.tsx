@@ -103,7 +103,7 @@ export function HomePage() {
               className="animate-rise mt-6 text-[2.75rem] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-6xl"
               style={{ animationDelay: '80ms' }}
             >
-              Stop solving problems.
+              Stop solving DSA problems.
               <br />
               <span className="bg-gradient-to-br from-accent to-positive bg-clip-text text-transparent">
                 Start recognising
@@ -163,9 +163,6 @@ export function HomePage() {
             <div className="glass rounded-2xl p-6 sm:p-8">
               <PatternLoop />
             </div>
-            <p className="mt-4 text-center text-xs text-ink-faint">
-              Three of the thirteen patterns the drill grades.
-            </p>
           </div>
         </section>
 

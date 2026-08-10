@@ -4,13 +4,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { ApiError, SessionExpiredError } from './api/http';
 import { AuthProvider } from './auth/AuthProvider';
-import { consumeGoogleCallback } from './auth/googleCallback';
+import { consumeOAuthCallback } from './auth/googleCallback';
 import App from './App';
 import './index.css';
 
-// Before anything renders: lift the OAuth tokens out of the URL and scrub the
-// query string, so they never reach the router, the history entry, or a referrer.
-consumeGoogleCallback();
+// Before anything renders: lift the OAuth session out of the URL and scrub the
+// query string, so it never reaches the router, the history entry, or a
+// referrer. The result is held for /auth/callback to report.
+consumeOAuthCallback();
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -66,15 +66,30 @@ export function FieldError({ children }: { children: ReactNode }) {
   return <span className="mt-1.5 block text-xs text-negative">{children}</span>;
 }
 
+/**
+ * Google's branding terms govern the mark, not the chrome: the four-colour "G"
+ * must not be recoloured, rescaled out of proportion, or crowded, and the label
+ * must be one of their approved strings ("Continue with Google" is). The
+ * surface around it is ours, so it wears the same lift-on-hover and press
+ * response as every other button in the app.
+ */
 export function GoogleButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-surface-raised px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-ink-faint disabled:cursor-not-allowed disabled:opacity-45"
+      className={cx(
+        'flex w-full items-center justify-center gap-3 rounded-lg border border-line bg-surface-raised px-4 py-2.5',
+        'text-sm font-medium text-ink',
+        'transition-all duration-200 ease-[var(--ease-quint)]',
+        'hover:-translate-y-px hover:border-line-strong hover:shadow-raised',
+        'active:translate-y-0 active:scale-[0.98]',
+        'disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0',
+      )}
     >
-      <svg viewBox="0 0 18 18" aria-hidden className="size-4">
+      {/* Google's mark, unmodified, with its own clear space. */}
+      <svg viewBox="0 0 18 18" aria-hidden className="size-[18px] shrink-0">
         <path
           fill="#4285F4"
           d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"

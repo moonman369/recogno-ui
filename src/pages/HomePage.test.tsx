@@ -42,13 +42,34 @@ describe('HomePage', () => {
 
   it('renders the focal pattern visual with an accessible description', () => {
     const html = render();
-    // The animation is decorative to a sighted user but carries the pitch, so
-    // it has to be describable rather than aria-hidden.
+    // The scenes carry no visible labels by design — recognising them unaided
+    // is the point — so the aria-label is the only thing naming them, and it
+    // has to cover every scene.
     expect(html).toContain('role="img"');
-    expect(html).toContain('sliding window');
-    expect(html).toContain('Sliding window');
-    expect(html).toContain('Two pointers');
-    expect(html).toContain('Breadth-first search');
+    for (const pattern of [
+      'sliding window',
+      'two converging pointers',
+      'breadth-first search',
+      'binary search',
+      'monotonic stack',
+      'heap',
+    ]) {
+      expect(html).toContain(pattern);
+    }
+  });
+
+  it('does not label the scenes on screen', () => {
+    const html = render();
+    // A <text> node inside the figure would turn recognition into reading.
+    const figure = html.slice(html.indexOf('role="img"'), html.indexOf('</svg>'));
+    expect(figure).not.toContain('<text');
+  });
+
+  it('animates six distinct patterns', () => {
+    const html = render();
+    for (let scene = 0; scene < 6; scene += 1) {
+      expect(html).toContain(`data-scene="${scene}"`);
+    }
   });
 
   it('renders revealed content when IntersectionObserver is unavailable', () => {
