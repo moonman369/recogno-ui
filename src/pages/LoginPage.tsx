@@ -28,7 +28,7 @@ export function LoginPage() {
   const state = location.state as FromState;
   const destination = state?.from?.pathname
     ? `${state.from.pathname}${state.from.search ?? ''}`
-    : '/drill';
+    : '/dashboard';
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();

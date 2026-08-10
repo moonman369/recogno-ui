@@ -44,6 +44,6 @@ export function RequireAuth() {
 /** Keeps a signed-in user off the login and register screens. */
 export function RedirectIfAuthenticated() {
   const { status } = useAuth();
-  if (status === 'authenticated') return <Navigate to="/drill" replace />;
+  if (status === 'authenticated') return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }

@@ -170,13 +170,18 @@
 }
 
 /* -- hero: the pattern loop ---------------------------------------------
- * An 18s cycle split into six 3s scenes. Every child animation runs on a 3s
- * period, which divides 18 exactly, so each scene is at phase zero whenever it
- * becomes visible — the loop never drifts however long the tab is open.
- * Staggered children carry `sceneDelay + stagger` for the same reason.
+ * A 24s cycle split into eight 3s scenes. Every child animation runs on a 3s
+ * period, which divides 24 exactly, so an unstaggered child is always at phase
+ * zero when its scene appears.
+ *
+ * Staggered children are the subtle case: a stagger that is not a multiple of
+ * the period leaves them mid-animation on the second and later cycles. The rule
+ * that makes that harmless is that **every looping inner keyframe must end
+ * where it began** — then whatever phase a child wraps in on, its held state is
+ * its rest state, and the stagger reads correctly every time round.
  */
 @utility animate-scene {
-  animation: scene-cycle 18s var(--ease-quint) infinite both;
+  animation: scene-cycle 24s var(--ease-quint) infinite both;
 }
 
 @keyframes scene-cycle {
@@ -184,12 +189,12 @@
     opacity: 0;
     transform: scale(0.98);
   }
-  1.5%,
-  13% {
+  1.2%,
+  9.8% {
     opacity: 1;
     transform: scale(1);
   }
-  16.6%,
+  12.5%,
   100% {
     opacity: 0;
     transform: scale(0.98);
@@ -222,7 +227,7 @@
   }
   70%,
   100% {
-    transform: translateX(114px);
+    transform: translateX(76px);
   }
 }
 
@@ -237,7 +242,7 @@
   }
   70%,
   100% {
-    transform: translateX(-114px);
+    transform: translateX(-76px);
   }
 }
 
@@ -296,9 +301,14 @@
     transform: scaleY(1);
   }
   42%,
-  100% {
+  92% {
     opacity: 0.2;
     transform: scaleY(0.35);
+  }
+  /* Back to rest before the wrap; the scene has already faded by here. */
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
   }
 }
 
@@ -325,6 +335,71 @@
   }
 }
 
+/* Union-Find: the bridge that joins two components, drawn left to right. */
+@utility animate-link {
+  animation: link 3s var(--ease-expo) infinite;
+}
+
+@keyframes link {
+  0%,
+  20% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  42%,
+  92% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+
+/* Union-Find: the far component adopting the root's colour once joined. */
+@utility animate-merge {
+  animation: merge 3s var(--ease-quint) infinite;
+}
+
+@keyframes merge {
+  0%,
+  38% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  58%,
+  92% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+/* Dynamic programming: a table filling cell by cell. */
+@utility animate-fill {
+  animation: fill-cell 3s var(--ease-quint) infinite;
+}
+
+@keyframes fill-cell {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  7%,
+  88% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+}
+
 /* Ambient light behind the hero. Long period, tiny movement — presence, not motion. */
 @utility animate-drift {
   animation: drift 22s ease-in-out infinite alternate;
@@ -345,6 +420,30 @@
   }
   to {
     transform: scaleX(1);
+  }
+}
+
+/* The drill's get-ready count. Each number lands, holds, then clears. */
+@utility animate-count {
+  animation: count-tick 1s var(--ease-expo) both;
+}
+
+@keyframes count-tick {
+  0% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
   }
 }
 

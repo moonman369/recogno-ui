@@ -7,9 +7,9 @@ export function NotFoundPage() {
       title="No such page"
       body="The link you followed does not match a route in this app."
       action={
-        <Link to="/drill">
+        <Link to="/dashboard">
           <Button variant="secondary" size="sm">
-            Back to the drill
+            Back to your dashboard
           </Button>
         </Link>
       }
