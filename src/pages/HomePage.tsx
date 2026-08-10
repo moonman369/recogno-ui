@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { AccountMenu } from '../components/AccountMenu';
 import { Brand, BrandMark } from '../components/Brand';
 import { PatternLoop } from '../components/PatternLoop';
 import { Reveal } from '../components/Reveal';
@@ -72,9 +73,12 @@ export function HomePage() {
           <Brand />
           <div className="flex items-center gap-2">
             {signedIn ? (
-              <Link to="/drill">
-                <Button size="sm">Continue drilling</Button>
-              </Link>
+              <>
+                <Link to="/dashboard">
+                  <Button size="sm">Go to dashboard</Button>
+                </Link>
+                <AccountMenu />
+              </>
             ) : (
               <>
                 <Link to="/login">
@@ -125,8 +129,8 @@ export function HomePage() {
               style={{ animationDelay: '240ms' }}
             >
               {signedIn ? (
-                <Link to="/drill">
-                  <Button className="px-5 py-2.5">Continue drilling</Button>
+                <Link to="/dashboard">
+                  <Button className="px-5 py-2.5">Go to dashboard</Button>
                 </Link>
               ) : (
                 <>
@@ -276,9 +280,9 @@ export function HomePage() {
                     : 'Create an account and draw your first problem.'}
                 </p>
               </div>
-              <Link to={signedIn ? '/drill' : '/register'}>
+              <Link to={signedIn ? '/dashboard' : '/register'}>
                 <Button className="px-5 py-2.5">
-                  {signedIn ? 'Go to the drill' : 'Get started'}
+                  {signedIn ? 'Open dashboard' : 'Get started'}
                 </Button>
               </Link>
             </div>

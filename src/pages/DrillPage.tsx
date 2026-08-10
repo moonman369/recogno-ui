@@ -13,11 +13,13 @@ import {
   textareaClass,
 } from '../components/ui';
 import { DrillResultPanel } from '../features/drill/DrillResultPanel';
+import { CountdownOverlay } from '../features/drill/CountdownOverlay';
 import { PatternPicker } from '../features/drill/PatternPicker';
 import { SpeedMeter } from '../features/drill/SpeedMeter';
 import { DIFFICULTY_TONE, DRILL_SOURCE_LABEL, absoluteTime, cx, relativeTime } from '../lib/format';
 import { buildPatternGroups, type PatternChoice } from '../lib/patternCatalog';
 import { rememberPatterns } from '../lib/recentPatterns';
+import { useCountdown } from '../lib/useCountdown';
 import { useElapsedSeconds } from '../lib/useElapsedSeconds';
 import { useHotkeys } from '../lib/useHotkeys';
 
@@ -41,7 +43,13 @@ export function DrillPage() {
 
   const problem = drill.data?.problem;
   const answered = submit.isSuccess;
-  const elapsed = useElapsedSeconds(problem?.id, Boolean(problem) && !answered);
+
+  // Count in before each problem, and hold the clock until it clears — those
+  // three seconds are preparation, not thinking time, and charging them would
+  // quietly cost speed score.
+  const countdown = useCountdown(problem?.id, 3, Boolean(problem) && !answered);
+  const armed = Boolean(problem) && !answered && countdown.done;
+  const elapsed = useElapsedSeconds(problem?.id, armed);
 
   const groups = useMemo(
     () => buildPatternGroups(drill.data?.patternOptions ?? []),
@@ -194,7 +202,8 @@ export function DrillPage() {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-start">
         {/* The problem stays put while you work the answer beside it. */}
-        <Card className="lg:sticky lg:top-20">
+        <Card className="relative lg:sticky lg:top-20">
+          {countdown.value !== null ? <CountdownOverlay value={countdown.value} /> : null}
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h1 className="text-xl font-semibold tracking-tight">{drill.data.problem.title}</h1>
             {drill.data.problem.difficulty ? (
@@ -266,7 +275,7 @@ export function DrillPage() {
                 onSetPrimary={setPrimary}
                 gradedOnly={gradedOnly}
                 onGradedOnlyChange={setGradedOnly}
-                disabled={submit.isPending}
+                disabled={submit.isPending || !countdown.done}
                 filterRef={filterRef}
               />
             </div>
@@ -286,7 +295,7 @@ export function DrillPage() {
                 maxLength={rationaleBudget}
                 value={rationaleText}
                 onChange={(event) => setRationaleText(event.target.value)}
-                disabled={submit.isPending}
+                disabled={submit.isPending || !countdown.done}
                 placeholder="The signal that gave it away…"
                 className={textareaClass}
               />

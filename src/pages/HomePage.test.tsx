@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HomePage } from './HomePage';
 import { AuthContext, type AuthContextValue } from '../auth/AuthContext';
 
@@ -23,12 +24,18 @@ function render(overrides: Partial<AuthContextValue> = {}): string {
     ...overrides,
   };
 
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
   return renderToStaticMarkup(
-    <AuthContext.Provider value={value}>
-      <MemoryRouter>
-        <HomePage />
-      </MemoryRouter>
-    </AuthContext.Provider>,
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider value={value}>
+        <MemoryRouter>
+          <HomePage />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    </QueryClientProvider>,
   );
 }
 
@@ -53,6 +60,8 @@ describe('HomePage', () => {
       'binary search',
       'monotonic stack',
       'heap',
+      'union-find',
+      'dynamic-programming',
     ]) {
       expect(html).toContain(pattern);
     }
@@ -65,9 +74,9 @@ describe('HomePage', () => {
     expect(figure).not.toContain('<text');
   });
 
-  it('animates six distinct patterns', () => {
+  it('animates eight distinct patterns', () => {
     const html = render();
-    for (let scene = 0; scene < 6; scene += 1) {
+    for (let scene = 0; scene < 8; scene += 1) {
       expect(html).toContain(`data-scene="${scene}"`);
     }
   });
@@ -104,10 +113,12 @@ describe('HomePage', () => {
     const html = render();
     expect(html).toContain('href="/register"');
     expect(html).toContain('href="/login"');
-    expect(html).not.toContain('Continue drilling');
+    expect(html).not.toContain('Go to dashboard');
+    // No profile menu for a visitor who is not signed in.
+    expect(html).not.toContain('aria-haspopup="menu"');
   });
 
-  it('swaps to a continue action when signed in', () => {
+  it('swaps to a dashboard action when signed in', () => {
     const html = render({
       status: 'authenticated',
       user: {
@@ -120,8 +131,12 @@ describe('HomePage', () => {
       },
     });
 
-    expect(html).toContain('Continue drilling');
+    expect(html).toContain('Go to dashboard');
+    expect(html).toContain('href="/dashboard"');
     expect(html).toContain('Signed in as Ada');
+    // The profile affordance, so a signed-in visitor is recognised here too.
+    expect(html).toContain('aria-haspopup="menu"');
+    expect(html).toContain('Ada');
     expect(html).not.toContain('href="/register"');
   });
 });

@@ -45,7 +45,7 @@ export function RegisterPage() {
         password,
         ...(trimmedName ? { displayName: trimmedName } : {}),
       });
-      navigate('/drill', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (cause) {
       setFieldErrors(parseValidationError(cause) ?? {});
       setError(cause);

@@ -30,7 +30,7 @@ export function OAuthCallbackPage() {
   useEffect(() => {
     if (result?.status !== 'success' || status !== 'authenticated') return;
     // Replace, so Back does not return to a spent callback URL.
-    const timer = setTimeout(() => navigate('/drill', { replace: true }), 350);
+    const timer = setTimeout(() => navigate('/dashboard', { replace: true }), 350);
     return () => clearTimeout(timer);
   }, [result, status, navigate]);
 

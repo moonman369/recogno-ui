@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { DashboardPage } from './pages/DashboardPage';
 import { DrillPage } from './pages/DrillPage';
 import { DecksPage } from './pages/DecksPage';
 import { DeckDetailPage } from './pages/DeckDetailPage';
@@ -34,6 +35,7 @@ export default function App() {
 
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="drill" element={<DrillPage />} />
           <Route path="review" element={<ReviewPage />} />
           <Route path="decks" element={<DecksPage />} />
