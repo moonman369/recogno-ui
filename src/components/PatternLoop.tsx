@@ -23,6 +23,7 @@ import { cx } from '../lib/format';
  */
 
 const SCENE_SECONDS = 3;
+const SCENE_COUNT = 8;
 
 /** The array the first four scenes operate on. */
 const CELL_X = 24;
@@ -110,7 +111,17 @@ export function PatternLoop({ className }: { className?: string }) {
   const sceneDelay = (index: number) => index * SCENE_SECONDS;
 
   return (
-    <div className={cx('relative', className)}>
+    <div
+      className={cx('relative', className)}
+      // The stylesheet reads both, so the scene length below is the single
+      // source of truth for the whole loop.
+      style={
+        {
+          '--scene': `${SCENE_SECONDS}s`,
+          '--loop': `${SCENE_SECONDS * SCENE_COUNT}s`,
+        } as React.CSSProperties
+      }
+    >
       <svg
         viewBox="0 0 320 180"
         role="img"

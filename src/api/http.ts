@@ -20,6 +20,10 @@ const PUBLIC_PATHS = new Set([
   '/auth/refresh',
   '/auth/logout',
   '/auth/google',
+  '/auth/verify-email/request',
+  '/auth/verify-email/confirm',
+  '/auth/forgot-password',
+  '/auth/reset-password',
   '/health',
 ]);
 

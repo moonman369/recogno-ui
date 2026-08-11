@@ -9,6 +9,15 @@ import { tokenStore } from './tokenStore';
 /** Never re-arm the proactive refresh faster than this, whatever the clock says. */
 const MIN_REFRESH_DELAY_MS = 5_000;
 
+/**
+ * How long to wait for `/auth/me` before giving up on the restore.
+ *
+ * A ceiling rather than a guess: without it, a stalled request — or a Web Lock
+ * that never resolves — leaves the app on its splash screen forever with no way
+ * out. Failing to a signed-out state is always recoverable; hanging is not.
+ */
+const BOOTSTRAP_TIMEOUT_MS = 8_000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
@@ -57,28 +66,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     setBootstrapError(null);
 
+    const timeout = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    // Aborting the fetch is not enough on its own: if the stall is upstream of
+    // the request — a refresh waiting on a Web Lock that never resolves — the
+    // promise simply never settles and there is nothing to abort. Racing a
+    // timer guarantees this resolves either way.
+    const expiry = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        timeout.abort();
+        reject(new Error('Timed out confirming your session.'));
+      }, BOOTSTRAP_TIMEOUT_MS);
+    });
+
     void (async () => {
       try {
-        const { user: me } = await api.auth.me();
+        const { user: me } = await Promise.race([api.auth.me(timeout.signal), expiry]);
         if (cancelled) return;
         setUser(me);
         setStatus('authenticated');
       } catch (error) {
         if (cancelled) return;
+
         if (isUnauthenticated(error)) {
+          // The token was rejected outright: nothing to keep.
           tokenStore.clear();
           setUser(null);
-          setStatus('unauthenticated');
         } else {
-          // A 503 or a dead connection is not a sign-out. Hold the session and
-          // let the user retry.
+          // A 503, a dead connection or a timeout is not proof the token is
+          // bad, so keep it — `retryBootstrap` can still succeed with it, and
+          // the guard offers that retry rather than a redirect.
           setBootstrapError(error);
         }
+
+        // Either way the restore is over. Leaving `status` on 'loading' here is
+        // what used to strand the app on its splash screen with no way out.
+        setStatus('unauthenticated');
+      } finally {
+        if (timer !== undefined) clearTimeout(timer);
       }
     })();
 
     return () => {
       cancelled = true;
+      if (timer !== undefined) clearTimeout(timer);
+      timeout.abort();
     };
   }, [bootstrapAttempt]);
 
@@ -139,6 +172,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
+  const applyUser = useCallback((next: AuthUser) => {
+    // Guarded: confirming a link in a browser with no session must not conjure
+    // a signed-in state with no tokens behind it.
+    setUser((current) => (current ? next : current));
+  }, []);
+
   const signOut = useCallback(async () => {
     const refreshToken = tokenStore.getRefreshToken();
     try {
@@ -173,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       providers: providersQuery.data ?? null,
       bootstrapError,
       retryBootstrap: () => setBootstrapAttempt((attempt) => attempt + 1),
+      applyUser,
       signIn,
       register,
       signOut,
@@ -184,6 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       providersQuery.data,
       bootstrapError,
+      applyUser,
       signIn,
       register,
       signOut,

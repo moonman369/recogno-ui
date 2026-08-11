@@ -4,6 +4,9 @@ import { RedirectIfAuthenticated, RequireAuth } from './auth/RequireAuth';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DrillPage } from './pages/DrillPage';
@@ -27,6 +30,15 @@ export default function App() {
         losing the error and cancellation states it exists to show.
       */}
       <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+
+      {/*
+        Reached from emailed links, so they must work signed out — and outside
+        RedirectIfAuthenticated too, or a signed-in user clicking a verify link
+        would be bounced to the dashboard without the token ever being used.
+      */}
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route element={<RedirectIfAuthenticated />}>
         <Route path="/login" element={<LoginPage />} />

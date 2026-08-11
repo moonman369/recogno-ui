@@ -11,19 +11,19 @@ import type { PatternOption } from '../api/types';
  * the user is told to "add one that is" with no clue which.
  */
 const CANONICAL: PatternOption[] = [
-  { id: 1, slug: 'sliding-window', name: 'Sliding Window' },
-  { id: 2, slug: 'two-pointers', name: 'Two Pointers' },
-  { id: 3, slug: 'monotonic-stack', name: 'Monotonic Stack' },
-  { id: 4, slug: 'binary-search-on-answer', name: 'Binary Search on Answer' },
-  { id: 5, slug: 'bfs-dfs', name: 'BFS / DFS' },
-  { id: 6, slug: 'dp-knapsack', name: 'DP — Knapsack' },
-  { id: 7, slug: 'dp-interval', name: 'DP — Interval' },
-  { id: 8, slug: 'dp-digit', name: 'DP — Digit' },
-  { id: 9, slug: 'greedy', name: 'Greedy' },
-  { id: 10, slug: 'heap', name: 'Heap' },
-  { id: 11, slug: 'union-find', name: 'Union Find' },
-  { id: 12, slug: 'backtracking', name: 'Backtracking' },
-  { id: 13, slug: 'bitmask', name: 'Bitmask' },
+  { id: 1, slug: 'sliding-window', name: 'Sliding Window', category: 'Test' },
+  { id: 2, slug: 'two-pointers', name: 'Two Pointers', category: 'Test' },
+  { id: 3, slug: 'monotonic-stack', name: 'Monotonic Stack', category: 'Test' },
+  { id: 4, slug: 'binary-search-on-answer', name: 'Binary Search on Answer', category: 'Test' },
+  { id: 5, slug: 'bfs-dfs', name: 'BFS / DFS', category: 'Test' },
+  { id: 6, slug: 'dp-knapsack', name: 'DP — Knapsack', category: 'Test' },
+  { id: 7, slug: 'dp-interval', name: 'DP — Interval', category: 'Test' },
+  { id: 8, slug: 'dp-digit', name: 'DP — Digit', category: 'Test' },
+  { id: 9, slug: 'greedy', name: 'Greedy', category: 'Test' },
+  { id: 10, slug: 'heap', name: 'Heap', category: 'Test' },
+  { id: 11, slug: 'union-find', name: 'Union Find', category: 'Test' },
+  { id: 12, slug: 'backtracking', name: 'Backtracking', category: 'Test' },
+  { id: 13, slug: 'bitmask', name: 'Bitmask', category: 'Test' },
 ];
 
 describe('the worker taxonomy', () => {
@@ -75,8 +75,8 @@ describe('the worker taxonomy', () => {
 
   it('matches the qualifier in either order for patterns added later', () => {
     // Neither spelling is in any alias list; the variant rule covers both.
-    expect(matchCatalogEntry({ id: 99, slug: 'dp-tree', name: 'DP — Tree' })?.slug).toBe('tree-dp');
-    expect(matchCatalogEntry({ id: 99, slug: 'bitmask-dp', name: 'Bitmask DP' })?.slug).toBe(
+    expect(matchCatalogEntry({ id: 99, slug: 'dp-tree', name: 'DP — Tree', category: 'Test' })?.slug).toBe('tree-dp');
+    expect(matchCatalogEntry({ id: 99, slug: 'bitmask-dp', name: 'Bitmask DP', category: 'Test' })?.slug).toBe(
       'bitmask-dp',
     );
   });
@@ -84,7 +84,7 @@ describe('the worker taxonomy', () => {
   it('still surfaces a pattern the catalog has never heard of', () => {
     const groups = buildPatternGroups([
       ...CANONICAL,
-      { id: 99, slug: 'quantum-annealing', name: 'Quantum Annealing' },
+      { id: 99, slug: 'quantum-annealing', name: 'Quantum Annealing', category: 'Test' },
     ]);
 
     const graded = groups[0].choices.find((choice) => choice.slug === 'quantum-annealing');

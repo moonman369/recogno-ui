@@ -3,6 +3,7 @@ import { AccountMenu } from '../components/AccountMenu';
 import { Brand, BrandMark } from '../components/Brand';
 import { PatternLoop } from '../components/PatternLoop';
 import { Reveal } from '../components/Reveal';
+import { SplashScreen } from '../components/SplashScreen';
 import { Badge, Button } from '../components/ui';
 import { SCORE_WEIGHTS, SPEED_WINDOW_SECONDS } from '../lib/scoring';
 import { percent } from '../lib/format';
@@ -51,8 +52,18 @@ const SCORE_ROWS = [
 ] as const;
 
 export function HomePage() {
-  const { status, user } = useAuth();
+  const { status, user, bootstrapError } = useAuth();
   const signedIn = status === 'authenticated';
+
+  // A returning visitor arrives with a refresh token but no confirmed session
+  // yet. Rendering now would show "Sign in" and then snap to their name a
+  // moment later, so hold the page until the check resolves.
+  //
+  // `bootstrapError` is the escape hatch: if the restore failed, fall through
+  // to the signed-out page rather than waiting on a check that already gave up.
+  // This is a public page, so signed-out is a perfectly good place to land —
+  // the header still offers Sign in.
+  if (status === 'loading' && !bootstrapError) return <SplashScreen />;
 
   return (
     <div className="relative min-h-dvh overflow-x-clip">
@@ -69,12 +80,12 @@ export function HomePage() {
       </div>
 
       <header className="sticky top-0 z-30 glass-nav">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <Brand />
           <div className="flex items-center gap-2">
             {signedIn ? (
               <>
-                <Link to="/dashboard">
+                <Link to="/dashboard" className="hidden sm:block">
                   <Button size="sm">Go to dashboard</Button>
                 </Link>
                 <AccountMenu />
@@ -86,7 +97,8 @@ export function HomePage() {
                     Sign in
                   </Button>
                 </Link>
-                <Link to="/register">
+                {/* The hero already carries a sign-up call to action on mobile. */}
+                <Link to="/register" className="hidden sm:block">
                   <Button size="sm">Get started</Button>
                 </Link>
               </>
@@ -95,16 +107,16 @@ export function HomePage() {
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-6xl px-6 pb-24">
+      <main className="relative mx-auto max-w-6xl px-4 pb-20 sm:px-6 sm:pb-24">
         {/* -- hero ------------------------------------------------------ */}
-        <section className="grid items-center gap-12 py-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:py-24">
+        <section className="grid items-center gap-10 py-12 sm:gap-12 sm:py-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:py-24">
           <div>
             <div className="animate-rise">
               <Badge tone="accent">Spaced repetition for pattern recognition</Badge>
             </div>
 
             <h1
-              className="animate-rise mt-6 text-[2.75rem] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-6xl"
+              className="animate-rise mt-6 text-[2.1rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-5xl lg:text-6xl"
               style={{ animationDelay: '80ms' }}
             >
               Stop solving DSA problems.
@@ -116,7 +128,7 @@ export function HomePage() {
             </h1>
 
             <p
-              className="animate-rise mt-6 max-w-xl text-lg leading-relaxed text-ink-muted"
+              className="animate-rise mt-5 max-w-xl text-base leading-relaxed text-ink-muted sm:mt-6 sm:text-lg"
               style={{ animationDelay: '160ms' }}
             >
               Recogno drills the twenty seconds that actually decide an interview: reading a problem
@@ -164,14 +176,14 @@ export function HomePage() {
 
           {/* The focal visual: the patterns themselves, tracing. */}
           <div className="animate-rise" style={{ animationDelay: '200ms' }}>
-            <div className="glass rounded-2xl p-6 sm:p-8">
+            <div className="glass rounded-2xl p-4 sm:p-8">
               <PatternLoop />
             </div>
           </div>
         </section>
 
         {/* -- the loop -------------------------------------------------- */}
-        <section id="guide" className="scroll-mt-20 border-t border-line py-20">
+        <section id="guide" className="scroll-mt-20 border-t border-line py-14 sm:py-20">
           <Reveal>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-faint">
               The drill loop
@@ -195,7 +207,7 @@ export function HomePage() {
         </section>
 
         {/* -- scoring --------------------------------------------------- */}
-        <section className="border-t border-line py-20">
+        <section className="border-t border-line py-14 sm:py-20">
           <div className="grid gap-10 sm:grid-cols-2">
             <Reveal>
               <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-faint">
@@ -233,7 +245,7 @@ export function HomePage() {
         </section>
 
         {/* -- screens --------------------------------------------------- */}
-        <section className="border-t border-line py-20">
+        <section className="border-t border-line py-14 sm:py-20">
           <Reveal>
             <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-faint">
               Where things live
@@ -267,9 +279,9 @@ export function HomePage() {
         </section>
 
         {/* -- closing --------------------------------------------------- */}
-        <section className="border-t border-line py-20">
+        <section className="border-t border-line py-14 sm:py-20">
           <Reveal>
-            <div className="glass flex flex-wrap items-center justify-between gap-6 rounded-2xl p-8">
+            <div className="glass flex flex-wrap items-center justify-between gap-6 rounded-2xl p-6 sm:p-8">
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight">
                   {signedIn ? 'Your queue is waiting.' : 'It takes one problem to see the point.'}
@@ -291,9 +303,9 @@ export function HomePage() {
       </main>
 
       <footer className="relative border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-8 text-xs text-ink-faint">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-8 text-xs text-ink-faint sm:px-6">
           <span className="inline-flex items-center gap-2">
-            <BrandMark className="size-4" /> Recogno
+            <BrandMark className="size-4" monochrome /> Recogno
           </span>
           <span>Spaced-repetition pattern recognition for DSA and system design.</span>
         </div>

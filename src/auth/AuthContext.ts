@@ -17,6 +17,12 @@ export type AuthContextValue = {
   retryBootstrap: () => void;
   signIn: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
+  /**
+   * Replaces the cached user in place. Used when an endpoint returns an updated
+   * user (email verification) so the UI settles without refetching. A no-op
+   * when signed out — there is no session to attach it to.
+   */
+  applyUser: (user: AuthUser) => void;
   signOut: () => Promise<void>;
   signOutEverywhere: () => Promise<void>;
   startGoogleSignIn: () => void;

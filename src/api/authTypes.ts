@@ -24,6 +24,32 @@ export type LogoutInput = Body<paths['/auth/logout']['post']['requestBody']>;
 
 export type MeResponse = Ok<paths['/auth/me']['get']['responses'][200]>;
 
+/* -- email verification and password reset ------------------------------- */
+
+/** Both request endpoints always 202 with a deliberately vague message. */
+export type VerifyEmailRequestInput = Body<
+  paths['/auth/verify-email/request']['post']['requestBody']
+>;
+export type VerifyEmailRequestResult = Ok<
+  paths['/auth/verify-email/request']['post']['responses'][202]
+>;
+
+export type VerifyEmailConfirmInput = Body<
+  paths['/auth/verify-email/confirm']['post']['requestBody']
+>;
+export type VerifyEmailConfirmResult = Ok<
+  paths['/auth/verify-email/confirm']['post']['responses'][200]
+>;
+
+export type ForgotPasswordInput = Body<paths['/auth/forgot-password']['post']['requestBody']>;
+export type ForgotPasswordResult = Ok<paths['/auth/forgot-password']['post']['responses'][202]>;
+
+export type ResetPasswordInput = Body<paths['/auth/reset-password']['post']['requestBody']>;
+
+/** How long the emailed links stay valid, for the copy that sets expectations. */
+export const VERIFY_LINK_HOURS = 24;
+export const RESET_LINK_HOURS = 1;
+
 /**
  * Password bounds the server enforces, mirrored client-side to fail fast.
  * OpenAPI carries these as `minLength`/`maxLength`, which openapi-typescript
