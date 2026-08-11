@@ -14,7 +14,18 @@ type AvatarUser = {
  * load, which is why the initial is a real fallback rather than a placeholder
  * image.
  */
-export function Avatar({ user, className }: { user: AvatarUser; className?: string }) {
+export function Avatar({
+  user,
+  /**
+   * Carries the size. Deliberately not baked into the base class: a hardcoded
+   * `size-*` there beats any override, because Tailwind resolves conflicts by
+   * CSS source order rather than by the order classes appear in the attribute.
+   */
+  className = 'size-9 text-sm',
+}: {
+  user: AvatarUser;
+  className?: string;
+}) {
   const label = user.displayName?.trim() || user.email;
 
   if (user.avatarUrl) {
@@ -23,7 +34,7 @@ export function Avatar({ user, className }: { user: AvatarUser; className?: stri
         src={user.avatarUrl}
         alt=""
         referrerPolicy="no-referrer"
-        className={cx('size-14 shrink-0 rounded-full object-cover', className)}
+        className={cx('shrink-0 rounded-full object-cover', className)}
       />
     );
   }
@@ -32,7 +43,7 @@ export function Avatar({ user, className }: { user: AvatarUser; className?: stri
     <span
       aria-hidden
       className={cx(
-        'flex size-14 shrink-0 items-center justify-center rounded-full bg-accent-soft font-semibold text-accent',
+        'flex shrink-0 items-center justify-center rounded-full bg-accent-soft font-semibold text-accent',
         className,
       )}
     >

@@ -59,18 +59,30 @@ export function Brand({
   className,
   showName = true,
   monochrome = false,
+  /**
+   * Drops the wordmark on small screens, keeping the mark.
+   *
+   * Done on the wordmark itself rather than by hiding a whole second `<Brand>`:
+   * a `hidden` passed in from outside loses to the `inline-flex` on this
+   * wrapper, since Tailwind settles conflicts by CSS source order.
+   */
+  markOnlyOnMobile = false,
+  markClassName,
 }: {
   className?: string;
   showName?: boolean;
   monochrome?: boolean;
+  markOnlyOnMobile?: boolean;
+  markClassName?: string;
 }) {
   return (
     <span className={cx('inline-flex items-center gap-2.5', className)}>
-      <BrandMark monochrome={monochrome} />
+      <BrandMark monochrome={monochrome} className={markClassName} />
       {showName ? (
         <span
           className={cx(
             'text-[15px] font-semibold leading-none tracking-[-0.02em]',
+            markOnlyOnMobile && 'hidden sm:inline',
             monochrome ? undefined : 'text-ink',
           )}
         >

@@ -67,9 +67,9 @@ function SignedInMenu({ user }: { user: AuthUser }) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
+        className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-[13px] text-ink-muted transition-colors hover:text-ink"
       >
-        <Avatar user={user} className="size-6 text-xs" />
+        <Avatar user={user} className="size-[26px] text-[11px]" />
         <span className="hidden max-w-32 truncate sm:inline">{label}</span>
         <span
           aria-hidden
@@ -85,11 +85,11 @@ function SignedInMenu({ user }: { user: AuthUser }) {
       {open ? (
         <div
           role="menu"
-          className="glass animate-rise absolute right-0 mt-2 w-72 overflow-hidden rounded-xl"
+          className="glass-menu animate-rise absolute right-0 mt-2 w-72 overflow-hidden rounded-xl"
         >
           {/* Identity first — the point of the menu is to answer "who am I signed in as". */}
           <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
-            <Avatar user={user} className="size-10 text-base" />
+            <Avatar user={user} className="size-10 text-sm" />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-ink">{label}</p>
               <p className="truncate text-xs text-ink-faint">{user.email}</p>

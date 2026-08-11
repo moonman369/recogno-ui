@@ -9,7 +9,7 @@
 export function CountdownOverlay({ value }: { value: number }) {
   return (
     <div
-      className="glass absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl"
+      className="glass-menu absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl"
       role="status"
       aria-live="assertive"
       aria-label={`Starting in ${value}`}

@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useReviewDueCount } from '../api/queries';
-import { Brand, BrandMark } from './Brand';
+import { Brand } from './Brand';
 import { AccountMenu } from './AccountMenu';
 import { VerifyEmailBanner } from './VerifyEmailBanner';
 import { cx } from '../lib/format';
@@ -21,11 +21,10 @@ export function Layout() {
   return (
     <div className="min-h-dvh">
       <header className="glass-nav sticky top-0 z-20">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:gap-6 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2 sm:gap-5 sm:px-6 sm:py-2.5">
           <Link to="/" aria-label="Recogno home" className="shrink-0">
-            {/* The wordmark costs too much width on a phone; the mark alone reads. */}
-            <Brand className="hidden sm:inline-flex" />
-            <BrandMark className="size-6 text-accent sm:hidden" />
+            {/* One lockup: the wordmark drops itself on a phone, the mark stays. */}
+            <Brand markOnlyOnMobile markClassName="size-[18px]" />
           </Link>
 
           {/* Inline on a tablet and up; the bottom bar takes over below sm. */}
@@ -36,7 +35,7 @@ export function Layout() {
                 to={to}
                 className={({ isActive }) =>
                   cx(
-                    'relative rounded-lg px-3 py-1.5 text-sm transition-colors',
+                    'relative rounded-lg px-2.5 py-1 text-[13px] transition-colors',
                     isActive
                       ? 'bg-surface-raised font-medium text-ink'
                       : 'text-ink-muted hover:bg-surface hover:text-ink',
@@ -97,7 +96,7 @@ function MobileTabBar({ dueCount }: { dueCount: number }) {
             to={to}
             className={({ isActive }) =>
               cx(
-                'relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition-colors',
+                'relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] transition-colors',
                 isActive ? 'text-accent' : 'text-ink-faint',
               )
             }
