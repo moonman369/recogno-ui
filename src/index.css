@@ -100,20 +100,41 @@
  * light, where a plain border reads as a box.
  */
 @utility glass {
-  background-color: color-mix(in oklab, var(--color-surface) 74%, transparent);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  background-color: color-mix(in oklab, var(--color-surface) 84%, transparent);
+  backdrop-filter: blur(26px) saturate(140%);
+  -webkit-backdrop-filter: blur(26px) saturate(140%);
   border: 1px solid color-mix(in oklab, var(--color-ink) 9%, transparent);
   box-shadow:
     var(--shadow-float),
     inset 0 1px 0 color-mix(in oklab, var(--color-ink) 8%, transparent);
 }
 
+/*
+ * Surfaces that sit directly over scrolling body text — the nav, the tab bar,
+ * the profile menu, the countdown cover.
+ *
+ * Tuned so nothing underneath is legible. Blur alone smears text but leaves a
+ * moving light-and-dark ghost, which is what actually reads as content; the
+ * opacity is what kills that. Saturation is pulled back from the decorative
+ * glass because heavily blurred content at high saturation turns into colour
+ * blotches rather than a neutral frost.
+ */
 @utility glass-nav {
-  background-color: color-mix(in oklab, var(--color-canvas) 72%, transparent);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  background-color: color-mix(in oklab, var(--color-canvas) 93%, transparent);
+  backdrop-filter: blur(28px) saturate(135%);
+  -webkit-backdrop-filter: blur(28px) saturate(135%);
   box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--color-ink) 7%, transparent);
+}
+
+/** As `glass-nav`, but for floating panels that need their own edge and lift. */
+@utility glass-menu {
+  background-color: color-mix(in oklab, var(--color-surface) 95%, transparent);
+  backdrop-filter: blur(30px) saturate(135%);
+  -webkit-backdrop-filter: blur(30px) saturate(135%);
+  border: 1px solid color-mix(in oklab, var(--color-ink) 11%, transparent);
+  box-shadow:
+    var(--shadow-float),
+    inset 0 1px 0 color-mix(in oklab, var(--color-ink) 8%, transparent);
 }
 
 /* Where the browser cannot blur, fall back to near-opaque so ink stays legible. */
@@ -122,7 +143,10 @@
     background-color: color-mix(in oklab, var(--color-surface) 97%, transparent);
   }
   .glass-nav {
-    background-color: color-mix(in oklab, var(--color-canvas) 98%, transparent);
+    background-color: var(--color-canvas);
+  }
+  .glass-menu {
+    background-color: var(--color-surface);
   }
 }
 
