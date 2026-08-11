@@ -370,6 +370,225 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/verify-email/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a fresh email-verification link
+         * @description Always 202, whether or not the address is registered and whether or not it is already verified. Issuing a new link invalidates any previous unused one.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Always the same text, whether or not an account exists for that address. */
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/verify-email/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redeem an email-verification token
+         * @description Marks the address verified and returns the updated user. Does not sign anyone in — the link may well be opened in a browser that has no session.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            user: {
+                                id: string;
+                                email: string;
+                                displayName: string | null;
+                                avatarUrl: string | null;
+                                emailVerified: boolean;
+                                /** Format: date-time */
+                                createdAt: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Something the caller asked for does not exist or is malformed. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a password-reset link
+         * @description Always 202, whether or not the address is registered. Issuing a new link invalidates any previous unused one.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Always the same text, whether or not an account exists for that address. */
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set a new password with a reset token
+         * @description Revokes every existing session on success, so the client must sign in again with the new password. Returns 204 rather than a session for that reason.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                        password: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Something the caller asked for does not exist or is malformed. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/google": {
         parameters: {
             query?: never;
@@ -379,7 +598,7 @@ export interface paths {
         };
         /**
          * Begin Google sign-in
-         * @description Redirects to Google. Returns 501 when the server has no Google credentials — call `GET /auth/providers` first to find out.
+         * @description Redirects to Google. When the server has no Google credentials this redirects to OAUTH_SUCCESS_REDIRECT with `?error=not-configured`, or returns 501 when that is unset — call `GET /auth/providers` first to find out.
          */
         get: {
             parameters: {
@@ -427,7 +646,7 @@ export interface paths {
         };
         /**
          * Google sign-in callback
-         * @description Exchanges the authorization code for a Recogno session. Redirects to OAUTH_SUCCESS_REDIRECT when set, otherwise returns the session as JSON.
+         * @description Exchanges the authorization code for a Recogno session. When OAUTH_SUCCESS_REDIRECT is set both outcomes redirect there — success with `accessToken`/`refreshToken`, failure with `error` (a stable code) and `error_description`. With it unset the session comes back as JSON and failures keep their status codes.
          */
         get: {
             parameters: {
@@ -474,6 +693,17 @@ export interface paths {
                 };
                 /** @description Something the caller asked for does not exist or is malformed. */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Something the caller asked for does not exist or is malformed. */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -647,6 +877,11 @@ export interface paths {
                                 slug: string;
                                 /** @example Sliding Window */
                                 name: string;
+                                /**
+                                 * @description Study grouping. Group the picker by this — there are ~80 patterns.
+                                 * @example Two Pointers
+                                 */
+                                category: string;
                             }[];
                         };
                     };
@@ -729,6 +964,11 @@ export interface paths {
                                 slug: string;
                                 /** @example Sliding Window */
                                 name: string;
+                                /**
+                                 * @description Study grouping. Group the picker by this — there are ~80 patterns.
+                                 * @example Two Pointers
+                                 */
+                                category: string;
                             };
                             /** @description Every pattern the learner named, in the order given. */
                             guessedPatterns: {
@@ -737,6 +977,11 @@ export interface paths {
                                 slug: string;
                                 /** @example Sliding Window */
                                 name: string;
+                                /**
+                                 * @description Study grouping. Group the picker by this — there are ~80 patterns.
+                                 * @example Two Pointers
+                                 */
+                                category: string;
                             }[];
                             /** @description The canonical pattern; the one the tell explains. */
                             actualPattern: {
@@ -745,6 +990,11 @@ export interface paths {
                                 slug: string;
                                 /** @example Sliding Window */
                                 name: string;
+                                /**
+                                 * @description Study grouping. Group the picker by this — there are ~80 patterns.
+                                 * @example Two Pointers
+                                 */
+                                category: string;
                                 description: string;
                             };
                             /** @description Every pattern that counts as correct for this problem, including the canonical one. Naming any single one of these is full credit. */
@@ -754,6 +1004,11 @@ export interface paths {
                                 slug: string;
                                 /** @example Sliding Window */
                                 name: string;
+                                /**
+                                 * @description Study grouping. Group the picker by this — there are ~80 patterns.
+                                 * @example Two Pointers
+                                 */
+                                category: string;
                             }[];
                             /** @description The pre-written "why this pattern" explanation. Null if none exists. */
                             tell: string | null;

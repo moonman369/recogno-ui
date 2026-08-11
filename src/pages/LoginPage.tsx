@@ -11,7 +11,11 @@ import {
 import { authFormMessage, isRetryable, parseValidationError, type FieldErrors } from '../auth/authErrors';
 import { useAuth } from '../auth/useAuth';
 
-type FromState = { from?: { pathname?: string; search?: string } } | null;
+type FromState = {
+  from?: { pathname?: string; search?: string };
+  /** Handed over by the reset flow, which cannot sign the user in itself. */
+  notice?: string;
+} | null;
 
 export function LoginPage() {
   const { signIn, providers, startGoogleSignIn } = useAuth();
@@ -66,6 +70,12 @@ export function LoginPage() {
         </>
       }
     >
+      {state?.notice ? (
+        <div className="rounded-lg border border-positive/40 bg-positive/10 px-3 py-2.5">
+          <p className="text-sm text-positive">{state.notice}</p>
+        </div>
+      ) : null}
+
       {error ? (
         <FormError tone={isRetryable(error) ? 'caution' : 'negative'}>
           {authFormMessage(error)}
@@ -100,6 +110,12 @@ export function LoginPage() {
             />
             {fieldErrors.password ? <FieldError>{fieldErrors.password}</FieldError> : null}
           </Field>
+
+          <div className="-mt-1 text-right">
+            <Link to="/forgot-password" className="text-xs text-ink-faint hover:text-ink">
+              Forgot password?
+            </Link>
+          </div>
 
           <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? <Spinner className="border-t-canvas" /> : null}

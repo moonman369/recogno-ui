@@ -16,6 +16,7 @@ function render(overrides: Partial<AuthContextValue> = {}): string {
     providers: { password: true, google: false },
     bootstrapError: null,
     retryBootstrap: () => {},
+    applyUser: () => {},
     signIn: async () => {},
     register: async () => {},
     signOut: async () => {},
@@ -107,6 +108,29 @@ describe('HomePage', () => {
     for (const screen of ['Drill', 'Review', 'Decks']) {
       expect(html).toContain(screen);
     }
+  });
+
+  it('holds a splash while a stored token is still being checked', () => {
+    const html = render({ status: 'loading' });
+
+    // A returning visitor must not see "Sign in" flash before their own name.
+    expect(html).toContain('Checking your session');
+    expect(html).not.toContain('Start recognising');
+    expect(html).not.toContain('href="/register"');
+  });
+
+  it('falls through to the page when the session check failed', () => {
+    // The regression this guards: `status` stayed 'loading' after a non-401
+    // failure, and this page keyed its splash off `status` alone, so a
+    // returning visitor was stranded on "Checking your session" forever.
+    const html = render({
+      status: 'loading',
+      bootstrapError: new Error('Could not reach the Recogno API.'),
+    });
+
+    expect(html).not.toContain('Checking your session');
+    expect(html).toContain('Start recognising');
+    expect(html).toContain('href="/login"');
   });
 
   it('offers sign-up and sign-in when signed out', () => {

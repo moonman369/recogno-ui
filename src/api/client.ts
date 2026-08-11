@@ -2,9 +2,16 @@ import { request } from './http';
 import type {
   AuthProviders,
   AuthSession,
+  ForgotPasswordInput,
+  ForgotPasswordResult,
   LoginInput,
   MeResponse,
   RegisterInput,
+  ResetPasswordInput,
+  VerifyEmailConfirmInput,
+  VerifyEmailConfirmResult,
+  VerifyEmailRequestInput,
+  VerifyEmailRequestResult,
 } from './authTypes';
 import type {
   AddProblemInput,
@@ -52,6 +59,27 @@ export const api = {
     logoutAll: () => request<void>('/auth/logout-all', { method: 'POST' }),
 
     me: (signal?: AbortSignal) => request<MeResponse>('/auth/me', { signal }),
+
+    /** Always 202, even for an address with no account — never infer existence from it. */
+    requestVerifyEmail: (input: VerifyEmailRequestInput) =>
+      request<VerifyEmailRequestResult>('/auth/verify-email/request', {
+        method: 'POST',
+        body: input,
+      }),
+
+    confirmVerifyEmail: (input: VerifyEmailConfirmInput) =>
+      request<VerifyEmailConfirmResult>('/auth/verify-email/confirm', {
+        method: 'POST',
+        body: input,
+      }),
+
+    /** Always 202, same reasoning as above. */
+    forgotPassword: (input: ForgotPasswordInput) =>
+      request<ForgotPasswordResult>('/auth/forgot-password', { method: 'POST', body: input }),
+
+    /** 204 with no body; every existing session is revoked server-side. */
+    resetPassword: (input: ResetPasswordInput) =>
+      request<void>('/auth/reset-password', { method: 'POST', body: input }),
   },
 
   drill: {

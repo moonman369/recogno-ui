@@ -45,7 +45,10 @@ export function RegisterPage() {
         password,
         ...(trimmedName ? { displayName: trimmedName } : {}),
       });
-      navigate('/dashboard', { replace: true });
+      navigate('/dashboard', {
+        replace: true,
+        state: { notice: 'Check your email to verify your address.' },
+      });
     } catch (cause) {
       setFieldErrors(parseValidationError(cause) ?? {});
       setError(cause);

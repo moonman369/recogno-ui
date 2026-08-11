@@ -1,5 +1,6 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Button, Card, Loading } from '../components/ui';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Button, Card } from '../components/ui';
+import { SplashScreen } from '../components/SplashScreen';
 import { ApiError } from '../api/http';
 import { useAuth } from './useAuth';
 
@@ -23,15 +24,21 @@ export function RequireAuth() {
           <p className="mt-2 text-xs text-ink-faint">
             You are still signed in — this is a problem reaching the server, not with your account.
           </p>
-          <Button variant="secondary" size="sm" className="mt-4" onClick={retryBootstrap}>
-            Try again
-          </Button>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button variant="secondary" size="sm" onClick={retryBootstrap}>
+              Try again
+            </Button>
+            {/* Always a way forward, even if the server stays unreachable. */}
+            <Link to="/login" className="text-xs text-ink-faint transition-colors hover:text-ink">
+              Sign in again
+            </Link>
+          </div>
         </Card>
       </div>
     );
   }
 
-  if (status === 'loading') return <Loading label="Restoring your session…" />;
+  if (status === 'loading') return <SplashScreen label="Restoring your session…" />;
 
   if (status === 'unauthenticated') {
     // Remember where they were headed so sign-in can put them back.
