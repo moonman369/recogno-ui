@@ -5,7 +5,7 @@ import { PatternLoop } from '../components/PatternLoop';
 import { Reveal } from '../components/Reveal';
 import { SplashScreen } from '../components/SplashScreen';
 import { Badge, Button } from '../components/ui';
-import { SCORE_WEIGHTS, SPEED_WINDOW_SECONDS } from '../lib/scoring';
+import { SCORE_WEIGHTS, SPEED_FLOOR_SECONDS, SPEED_GRACE_SECONDS } from '../lib/scoring';
 import { percent } from '../lib/format';
 import { useAuth } from '../auth/useAuth';
 
@@ -48,7 +48,7 @@ const SCREENS = [
 const SCORE_ROWS = [
   ['Correctness', SCORE_WEIGHTS.correctness, 'Exact pattern match. A close family member is half credit.'],
   ['Rationale', SCORE_WEIGHTS.rationale, 'Whether the reason you gave is the reason it is that pattern.'],
-  ['Speed', SCORE_WEIGHTS.speed, `Linear from full marks at 0s down to zero at ${SPEED_WINDOW_SECONDS}s.`],
+  ['Speed', SCORE_WEIGHTS.speed, `Full marks for the first ${SPEED_GRACE_SECONDS}s, then decaying to zero at ${SPEED_FLOOR_SECONDS}s.`],
 ] as const;
 
 export function HomePage() {

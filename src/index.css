@@ -207,19 +207,32 @@
 }
 
 /* -- hero: the pattern loop ---------------------------------------------
- * `--scene` is one scene's length and `--loop` is scene x count; both are set
- * by the component so the two can never drift apart. Percentages here are
- * fractions of the whole loop, so they hold at any duration.
+ * `--loop` is scene length x scene count, set by the component so this file and
+ * the geometry can never drift apart. Percentages here are fractions of the
+ * whole loop, so they hold at any duration.
  *
- * A 24s cycle split into eight 3s scenes by default. Every child animation runs on a 3s
- * period, which divides 24 exactly, so an unstaggered child is always at phase
- * zero when its scene appears.
+ * A 24s cycle split into eight 3s scenes by default, so one scene is 12.5% of
+ * the timeline and the visible part of it — after the fade in, before the fade
+ * out — is 1.2% to 9.8%.
  *
- * Staggered children are the subtle case: a stagger that is not a multiple of
- * the period leaves them mid-animation on the second and later cycles. The rule
- * that makes that harmless is that **every looping inner keyframe must end
- * where it began** — then whatever phase a child wraps in on, its held state is
- * its rest state, and the stagger reads correctly every time round.
+ * **Every child animation runs the full `--loop` period, not its own scene.**
+ * Its `animation-delay` places it in its scene, which is the first 12.5% of its
+ * timeline; by 14% it is back at rest and stays there for the remaining 86%.
+ *
+ * That is what makes staggering safe. A stagger that is not a whole number of
+ * scenes leaves a child mid-timeline when its scene next comes round, and with
+ * a resting tail that long, "mid-timeline" always lands on the rest state. On a
+ * per-scene period the same stagger would land the child somewhere in its
+ * active range instead — a DP cell already filled, a heap node already lit —
+ * which is only invisible on the very first pass through the loop.
+ *
+ * `backwards` fill covers that first pass, where a delayed child has not
+ * started at all and would otherwise render its unanimated attributes.
+ * Deliberately not `both`: the reduced-motion rule below collapses these to
+ * 0.01ms, and a forwards fill would freeze each one on its *final* keyframe.
+ *
+ * Distances are custom properties rather than literals, because the component
+ * derives them from the same geometry it draws the static shapes from.
  */
 @utility animate-scene {
   animation: scene-cycle var(--loop, 24s) var(--ease-quint) infinite both;
@@ -242,202 +255,225 @@
   }
 }
 
-@utility animate-sweep {
-  animation: sweep var(--scene, 3s) var(--ease-quint) infinite;
+/*
+ * A horizontal travel of `--slide-x`, held at the far end until the scene has
+ * gone and reset while nothing is looking. Used by the sliding window and by
+ * both of the converging pointers — same motion, three different distances.
+ */
+@utility animate-slide {
+  animation: slide var(--loop, 24s) var(--ease-quint) infinite backwards;
 }
 
-@keyframes sweep {
+@keyframes slide {
   0%,
-  8% {
+  1.6% {
     transform: translateX(0);
   }
-  75%,
-  100% {
-    transform: translateX(152px);
+  8.5%,
+  12.5% {
+    transform: translateX(var(--slide-x, 0px));
   }
-}
-
-@utility animate-converge-left {
-  animation: converge-left var(--scene, 3s) var(--ease-quint) infinite;
-}
-
-@keyframes converge-left {
-  0%,
-  8% {
+  14%,
+  100% {
     transform: translateX(0);
   }
-  70%,
-  100% {
-    transform: translateX(76px);
-  }
 }
 
-@utility animate-converge-right {
-  animation: converge-right var(--scene, 3s) var(--ease-quint) infinite;
-}
-
-@keyframes converge-right {
-  0%,
-  8% {
-    transform: translateX(0);
-  }
-  70%,
-  100% {
-    transform: translateX(-76px);
-  }
-}
-
+/*
+ * Breadth-first search: one ring per level of the frontier. `--ripple-reach` is
+ * the scale that puts the ring just outside that level's nodes, so the ring
+ * arrives exactly as the level lights rather than washing past it. Rings carry
+ * `vector-effect: non-scaling-stroke`, or the outermost would be drawn seven
+ * times as thick as the innermost.
+ */
 @utility animate-ripple {
-  animation: ripple var(--scene, 3s) var(--ease-expo) infinite;
+  animation: ripple var(--loop, 24s) var(--ease-quint) infinite backwards;
 }
 
 @keyframes ripple {
   0% {
     opacity: 0;
-    transform: scale(0.2);
+    transform: scale(0.25);
   }
-  15% {
-    opacity: 0.7;
+  0.6% {
+    opacity: 0.75;
   }
-  70%,
+  /* Arrival, matching the 1.9% at which `reveal` lights the nodes. */
+  1.9% {
+    opacity: 0.5;
+    transform: scale(var(--ripple-reach, 3));
+  }
+  4.6%,
   100% {
     opacity: 0;
-    transform: scale(2.6);
+    transform: scale(var(--ripple-reach, 3));
   }
 }
 
 /*
- * Binary search on answer: the range halves, twice. Done as translate + scaleX
- * against a left transform-origin rather than animating `width`, so it stays a
- * composited transform instead of a geometry change every frame.
+ * Something arriving and then staying for the rest of its scene: a visited BFS
+ * node, a union-find node adopting the root's colour, a filled DP cell. It
+ * fades out on the same 9.8%-to-12.5% ramp as the scene itself, so it leaves
+ * with the scene rather than a beat before or after it.
  */
-@utility animate-halve {
-  animation: halve var(--scene, 3s) var(--ease-quint) infinite;
+@utility animate-reveal {
+  animation: reveal var(--loop, 24s) var(--ease-quint) infinite backwards;
 }
 
-@keyframes halve {
-  0%,
-  22% {
-    transform: translateX(0) scaleX(1);
+@keyframes reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
   }
-  38%,
-  58% {
-    transform: translateX(133px) scaleX(0.5);
+  1.9%,
+  9.8% {
+    opacity: 1;
+    transform: scale(1);
   }
-  74%,
+  12.5%,
   100% {
-    transform: translateX(199.5px) scaleX(0.25);
+    opacity: 0;
+    transform: scale(0.55);
+  }
+}
+
+/*
+ * Binary search on answer. Each surviving range is its own rect, drawn on real
+ * cell boundaries, handed over as a step — rather than one rect scaled down,
+ * which would land its edges mid-cell and squash its corner radius and side
+ * strokes along the way. `animate-range` is a step that gets discarded;
+ * `animate-range-final` is the one left holding the answer.
+ */
+@utility animate-range {
+  animation: range-step var(--loop, 24s) var(--ease-quint) infinite backwards;
+}
+
+@keyframes range-step {
+  0% {
+    opacity: 0;
+    transform: scaleX(1.05);
+  }
+  1.4%,
+  4.3% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  5.4%,
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+@utility animate-range-final {
+  animation: range-final var(--loop, 24s) var(--ease-quint) infinite backwards;
+}
+
+@keyframes range-final {
+  0% {
+    opacity: 0;
+    transform: scaleX(1.05);
+  }
+  1.4%,
+  9.8% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  12.5%,
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
   }
 }
 
 /* Monotonic stack: bars collapse as a taller one arrives and pops them off. */
 @utility animate-pop-bar {
-  animation: pop-bar var(--scene, 3s) var(--ease-quint) infinite;
+  animation: pop-bar var(--loop, 24s) var(--ease-quint) infinite backwards;
 }
 
 @keyframes pop-bar {
   0%,
-  18% {
+  1.5% {
     opacity: 1;
     transform: scaleY(1);
   }
-  42%,
-  92% {
-    opacity: 0.2;
-    transform: scaleY(0.35);
+  /* Stays popped until the scene is fully out, then rests for the long tail. */
+  4.4%,
+  12.5% {
+    opacity: 0.12;
+    transform: scaleY(0.25);
   }
-  /* Back to rest before the wrap; the scene has already faded by here. */
+  14%,
   100% {
     opacity: 1;
     transform: scaleY(1);
   }
 }
 
-/* Heap: a value sifting down the tree, one level at a time. */
+/*
+ * Heap: one value sifting down the tree. Two hops, each a translate to a
+ * child's offset from the root, with a hold on either side so the levels read
+ * as separate decisions instead of one diagonal glide.
+ */
 @utility animate-sift {
-  animation: sift var(--scene, 3s) var(--ease-quint) infinite;
+  animation: sift var(--loop, 24s) var(--ease-quint) infinite backwards;
 }
 
 @keyframes sift {
-  0%,
-  10% {
+  0% {
     opacity: 0;
-    transform: scale(0.4);
+    transform: translate(0, 0) scale(0.5);
   }
-  22%,
-  40% {
+  1.2% {
     opacity: 1;
-    transform: scale(1);
+    transform: translate(0, 0) scale(1);
   }
-  55%,
+  3.1% {
+    transform: translate(0, 0) scale(1);
+  }
+  5%,
+  6.2% {
+    transform: translate(var(--sift-x1, 0px), var(--sift-y1, 0px)) scale(1);
+  }
+  8.1%,
+  9.8% {
+    opacity: 1;
+    transform: translate(var(--sift-x2, 0px), var(--sift-y2, 0px)) scale(1);
+  }
+  12.5% {
+    opacity: 0;
+    transform: translate(var(--sift-x2, 0px), var(--sift-y2, 0px)) scale(0.5);
+  }
+  14%,
   100% {
     opacity: 0;
-    transform: scale(0.4);
+    transform: translate(0, 0) scale(0.5);
   }
 }
 
 /* Union-Find: the bridge that joins two components, drawn left to right. */
 @utility animate-link {
-  animation: link var(--scene, 3s) var(--ease-expo) infinite;
+  animation: link var(--loop, 24s) var(--ease-expo) infinite backwards;
 }
 
 @keyframes link {
   0%,
-  20% {
+  0.8% {
     opacity: 0;
     transform: scaleX(0);
   }
-  42%,
-  92% {
+  1.2% {
+    opacity: 1;
+  }
+  4%,
+  12.5% {
     opacity: 1;
     transform: scaleX(1);
   }
+  14%,
   100% {
     opacity: 0;
     transform: scaleX(0);
-  }
-}
-
-/* Union-Find: the far component adopting the root's colour once joined. */
-@utility animate-merge {
-  animation: merge var(--scene, 3s) var(--ease-quint) infinite;
-}
-
-@keyframes merge {
-  0%,
-  38% {
-    opacity: 0;
-    transform: scale(0.7);
-  }
-  58%,
-  92% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.7);
-  }
-}
-
-/* Dynamic programming: a table filling cell by cell. */
-@utility animate-fill {
-  animation: fill-cell var(--scene, 3s) var(--ease-quint) infinite;
-}
-
-@keyframes fill-cell {
-  0% {
-    opacity: 0;
-    transform: scale(0.55);
-  }
-  7%,
-  88% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.55);
   }
 }
 
@@ -513,6 +549,12 @@
    * The blanket rule above would land every scene of the hero loop on its
    * final keyframe — which is opacity 0 — leaving the visual empty. Freeze it
    * on the first scene instead, so it becomes a still illustration.
+   *
+   * What the still shows is scene one's children at their *unanimated*
+   * attributes: the window sitting over the cells it starts on. That only
+   * holds because those animations fill `backwards` rather than `both` — a
+   * forwards fill would survive the 0.01ms run above and leave the window
+   * parked at the end of its sweep.
    */
   [data-scene] {
     animation: none !important;
