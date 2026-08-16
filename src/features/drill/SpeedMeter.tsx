@@ -1,4 +1,4 @@
-import { SPEED_WINDOW_SECONDS, scoreTone, speedCreditAt } from '../../lib/scoring';
+import { SPEED_FLOOR_SECONDS, SPEED_GRACE_SECONDS, scoreTone, speedCreditAt } from '../../lib/scoring';
 import { cx, formatSeconds, percent } from '../../lib/format';
 
 const FILL = {
@@ -10,10 +10,10 @@ const FILL = {
 /**
  * The elapsed clock and the speed credit still on the table, in one control.
  *
- * Speed is 20% of the composite and decays linearly to nothing at 90 seconds.
- * A bare `1:23` does not convey that; a draining bar does, and it is the
- * product's own arithmetic rather than invented urgency. Past the window it
- * settles into a spent state instead of alarming in red forever.
+ * Speed is 20% of the composite: flat for the first 45 seconds, then decaying
+ * to nothing at 300. A bare `1:23` does not convey that; a draining bar does,
+ * and it is the grader's own arithmetic rather than invented urgency. Past the
+ * floor it settles into a spent state instead of alarming in red forever.
  */
 export function SpeedMeter({ elapsed, frozen }: { elapsed: number; frozen: boolean }) {
   const credit = speedCreditAt(elapsed);
@@ -43,7 +43,7 @@ export function SpeedMeter({ elapsed, frozen }: { elapsed: number; frozen: boole
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label="Speed credit remaining"
-        title={`Speed score decays to zero at ${SPEED_WINDOW_SECONDS}s`}
+        title={`Full speed credit up to ${SPEED_GRACE_SECONDS}s, then decaying to zero at ${SPEED_FLOOR_SECONDS}s`}
         className="relative h-10 w-1.5 overflow-hidden rounded-full bg-surface-raised"
       >
         <div
