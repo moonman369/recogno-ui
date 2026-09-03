@@ -79,7 +79,7 @@ function forceSignOut(): void {
 /* -- transport ----------------------------------------------------------- */
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   signal?: AbortSignal;
   /** Overrides the `PUBLIC_PATHS` default. */

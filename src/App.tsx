@@ -15,6 +15,7 @@ import { DeckDetailPage } from './pages/DeckDetailPage';
 import { AttemptPage } from './pages/AttemptPage';
 import { SubmissionPage } from './pages/SubmissionPage';
 import { ReviewPage } from './pages/ReviewPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export default function App() {
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="review" element={<ReviewPage />} />
           <Route path="decks" element={<DecksPage />} />
           <Route path="decks/:deckId" element={<DeckDetailPage />} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="problems/:problemId/attempt" element={<AttemptPage />} />
           <Route path="submissions/:submissionId" element={<SubmissionPage />} />
           <Route path="*" element={<NotFoundPage />} />

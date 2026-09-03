@@ -28,6 +28,8 @@ import type {
   Health,
   ReviewDueCount,
   ReviewQueue,
+  ScoringSettings,
+  ScoringThresholdsInput,
   Submission,
   SubmissionCreateInput,
   SubmissionList,
@@ -37,6 +39,11 @@ export { ApiError, BASE_URL, SessionExpiredError, isUnauthenticated, isUnavailab
 
 /** `POST /decks` returns the deck without its problems. */
 type Deck201 = DeckList['decks'][number];
+
+/** Appends a `?deckId=` only when one is given, so an unscoped call is byte-for-byte what it was before. */
+function scoped(path: string, deckId?: number): string {
+  return deckId === undefined ? path : `${path}?deckId=${deckId}`;
+}
 
 export const api = {
   health: (signal?: AbortSignal) => request<Health>('/health', { signal }),
@@ -83,10 +90,14 @@ export const api = {
   },
 
   drill: {
-    next: (signal?: AbortSignal) => request<DrillNext>('/drill/next', { signal }),
+    /** `deckId` restricts the draw to one deck; omit it for today's cross-deck behaviour. */
+    next: (deckId?: number, signal?: AbortSignal) =>
+      request<DrillNext>(scoped('/drill/next', deckId), { signal }),
+    /** `problemId` alone identifies the problem, deck included — no `deckId` here. */
     submit: (input: DrillSubmitInput) =>
       request<DrillResult>('/drill/submit', { method: 'POST', body: input }),
-    dueCount: (signal?: AbortSignal) => request<DrillDueCount>('/drill/due-count', { signal }),
+    dueCount: (deckId?: number, signal?: AbortSignal) =>
+      request<DrillDueCount>(scoped('/drill/due-count', deckId), { signal }),
   },
 
   decks: {
@@ -112,5 +123,14 @@ export const api = {
   review: {
     dueCount: (signal?: AbortSignal) => request<ReviewDueCount>('/review/due-count', { signal }),
     queue: (signal?: AbortSignal) => request<ReviewQueue>('/review/queue', { signal }),
+  },
+
+  settings: {
+    /** The FSRS-grade thresholds grading this user, falling back to the built-in defaults. */
+    scoring: (signal?: AbortSignal) => request<ScoringSettings>('/settings/scoring', { signal }),
+    updateScoring: (input: ScoringThresholdsInput) =>
+      request<ScoringSettings>('/settings/scoring', { method: 'PUT', body: input }),
+    /** Drops the override and reverts to defaults. */
+    resetScoring: () => request<ScoringSettings>('/settings/scoring', { method: 'DELETE' }),
   },
 };

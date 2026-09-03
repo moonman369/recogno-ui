@@ -2,6 +2,7 @@ import type { paths } from './schema';
 
 type Ok<T> = T extends { content: { 'application/json': infer B } } ? B : never;
 type Body<T> = T extends { content: { 'application/json': infer B } } ? B : never;
+type Query<T> = T extends { parameters: { query?: infer Q } } ? NonNullable<Q> : never;
 
 /* -- system ------------------------------------------------------------- */
 
@@ -10,6 +11,8 @@ export type Health = Ok<paths['/health']['get']['responses'][200]>;
 /* -- drill -------------------------------------------------------------- */
 
 export type DrillNext = Ok<paths['/drill/next']['get']['responses'][200]>;
+/** `?deckId=` scopes both `/drill/next` and `/drill/due-count` to one deck. Omit for today's cross-deck draw. */
+export type DrillScope = Query<paths['/drill/next']['get']>;
 export type DrillProblem = DrillNext['problem'];
 export type DrillSource = DrillNext['source'];
 export type PatternOption = DrillNext['patternOptions'][number];
@@ -56,6 +59,12 @@ export type SubmissionList = Ok<
 
 export type CommitInput = Body<paths['/submissions/{submissionId}/commit']['post']['requestBody']>;
 export type CommitResult = Ok<paths['/submissions/{submissionId}/commit']['post']['responses'][200]>;
+
+/* -- settings ---------------------------------------------------------- */
+
+export type ScoringSettings = Ok<paths['/settings/scoring']['get']['responses'][200]>;
+export type ScoringThresholds = ScoringSettings['thresholds'];
+export type ScoringThresholdsInput = Body<paths['/settings/scoring']['put']['requestBody']>;
 
 /* -- review ------------------------------------------------------------- */
 

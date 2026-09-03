@@ -129,6 +129,15 @@ function SignedInMenu({ user }: { user: AuthUser }) {
             Profile &amp; dashboard
           </Link>
 
+          <Link
+            to="/settings"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2.5 text-left text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink"
+          >
+            Scoring settings
+          </Link>
+
           <button
             type="button"
             role="menuitem"

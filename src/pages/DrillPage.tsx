@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
-import { useDrillNext, useSubmitDrill } from '../api/queries';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useDeck, useDrillNext, useSubmitDrill } from '../api/queries';
 import { ApiError } from '../api/client';
+import { classifyDrillNotFound, parseDeckIdParam } from '../lib/deckScope';
 import {
   Badge,
   Button,
@@ -28,7 +30,12 @@ const RATIONALE_MAX = 4000;
 const TIME_MAX_SECONDS = 3600;
 
 export function DrillPage() {
-  const drill = useDrillNext();
+  const [searchParams] = useSearchParams();
+  // `?deckId=` scopes the whole session to one deck. Absent or malformed → the
+  // ordinary cross-deck draw, exactly as before.
+  const deckId = parseDeckIdParam(searchParams.get('deckId'));
+  const drill = useDrillNext(deckId);
+  const scopedDeck = useDeck(deckId ? String(deckId) : undefined);
   const submit = useSubmitDrill();
 
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -158,7 +165,48 @@ export function DrillPage() {
 
   if (drill.isError) {
     const notFound = drill.error instanceof ApiError && drill.error.status === 404;
-    return notFound ? (
+    if (!notFound) return <ErrorState error={drill.error} onRetry={() => void drill.refetch()} />;
+
+    const scope = classifyDrillNotFound(drill.error, deckId);
+
+    if (scope.kind === 'deck-missing') {
+      return (
+        <EmptyState
+          title="That deck isn’t here"
+          body="It may have been removed, or the link is out of date. Pick a deck from the list and start again."
+          action={
+            <Link to="/decks">
+              <Button variant="secondary" size="sm">
+                Browse decks
+              </Button>
+            </Link>
+          }
+        />
+      );
+    }
+
+    if (scope.kind === 'deck-empty') {
+      return (
+        <EmptyState
+          title="Nothing to drill in this deck yet"
+          body="This deck has no problems ready for a recognition rep. Add some to it, then come back."
+          action={
+            <div className="flex justify-center gap-2">
+              <Link to={`/decks/${deckId}`}>
+                <Button variant="secondary" size="sm">
+                  Open the deck
+                </Button>
+              </Link>
+              <Button variant="ghost" size="sm" onClick={() => void drill.refetch()}>
+                Check again
+              </Button>
+            </div>
+          }
+        />
+      );
+    }
+
+    return (
       <EmptyState
         title="Nothing to drill"
         body="No problem was available. Add problems to a deck and they will start showing up here."
@@ -168,8 +216,6 @@ export function DrillPage() {
           </Button>
         }
       />
-    ) : (
-      <ErrorState error={drill.error} onRetry={() => void drill.refetch()} />
     );
   }
 
@@ -181,6 +227,11 @@ export function DrillPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={source === 'due' ? 'accent' : 'neutral'}>{DRILL_SOURCE_LABEL[source]}</Badge>
+          {deckId ? (
+            <Link to={`/decks/${deckId}`} className="text-xs text-accent hover:underline">
+              {scopedDeck.data ? `in ${scopedDeck.data.name}` : 'in this deck'}
+            </Link>
+          ) : null}
           {dueAt ? (
             <span className="text-xs text-ink-faint" title={absoluteTime(dueAt)}>
               due {relativeTime(dueAt)}
