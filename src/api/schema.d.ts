@@ -837,10 +837,15 @@ export interface paths {
          * @description Returns the statement and constraints only. The ground-truth pattern and the tell are withheld until the guess is submitted.
          *
          *     Prefers an SRS card that is due, then a problem never seen, then the soonest-due card.
+         *
+         *     Pass `?deckId=` to restrict selection to one deck (system or the caller’s own); omit it to search across every deck visible to the caller, as before.
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Scope to one deck (system or the caller’s own). Omit to search across every deck visible to the caller, as before. */
+                    deckId?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -1093,10 +1098,15 @@ export interface paths {
         /**
          * Count the drill reps waiting
          * @description Drill-eligible cards whose due date has passed. For the badge that spans both flows, use `GET /review/due-count`.
+         *
+         *     Pass `?deckId=` to count only that deck, e.g. for a per-deck badge.
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Scope to one deck (system or the caller’s own). Omit to search across every deck visible to the caller, as before. */
+                    deckId?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -1114,6 +1124,17 @@ export interface paths {
                             dueCount: number;
                             /** @description When the soonest card falls due. Null if the user has no cards. */
                             nextDueAt: string | null;
+                        };
+                    };
+                };
+                /** @description Something the caller asked for does not exist or is malformed. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
                         };
                     };
                 };
@@ -1886,6 +1907,143 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/scoring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The thresholds currently grading this user
+         * @description Defaults to the built-in bands (0.8 / 0.55 / 0.3) until this user sets an override.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            thresholds: {
+                                /** @description Composite at or above this earns Easy. */
+                                easy: number;
+                                /** @description Composite at or above this earns Good. */
+                                good: number;
+                                /** @description Composite at or above this earns Hard. Below it, the card lapses (Again). */
+                                hard: number;
+                            };
+                            /** @description True when no override is set, so `thresholds` is just the built-in default. */
+                            isDefault: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Set custom thresholds
+         * @description Replaces any existing override outright. Must satisfy `hard < good < easy`. Takes effect on the learner's next graded attempt — it does not reschedule cards already due.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Composite at or above this earns Easy. */
+                        easy: number;
+                        /** @description Composite at or above this earns Good. */
+                        good: number;
+                        /** @description Composite at or above this earns Hard. Below it, the card lapses (Again). */
+                        hard: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            thresholds: {
+                                /** @description Composite at or above this earns Easy. */
+                                easy: number;
+                                /** @description Composite at or above this earns Good. */
+                                good: number;
+                                /** @description Composite at or above this earns Hard. Below it, the card lapses (Again). */
+                                hard: number;
+                            };
+                            /** @description True when no override is set, so `thresholds` is just the built-in default. */
+                            isDefault: boolean;
+                        };
+                    };
+                };
+                /** @description Something the caller asked for does not exist or is malformed. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Reset to the default thresholds */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            thresholds: {
+                                /** @description Composite at or above this earns Easy. */
+                                easy: number;
+                                /** @description Composite at or above this earns Good. */
+                                good: number;
+                                /** @description Composite at or above this earns Hard. Below it, the card lapses (Again). */
+                                hard: number;
+                            };
+                            /** @description True when no override is set, so `thresholds` is just the built-in default. */
+                            isDefault: boolean;
+                        };
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;

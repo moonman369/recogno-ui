@@ -11,14 +11,18 @@ import {
   type CommitInput,
   type DeckCreateInput,
   type DrillSubmitInput,
+  type ScoringThresholdsInput,
   type Submission,
   type SubmissionCreateInput,
 } from './types';
 
 export const keys = {
   health: ['health'] as const,
-  drillNext: ['drill', 'next'] as const,
-  drillDueCount: ['drill', 'due-count'] as const,
+  // `deckId` widens the key so a scoped drill session caches separately from the
+  // cross-deck draw; the bare prefix still matches both for invalidation.
+  drillNext: (deckId?: number) => ['drill', 'next', ...(deckId ? [{ deckId }] : [])] as const,
+  drillDueCount: (deckId?: number) =>
+    ['drill', 'due-count', ...(deckId ? [{ deckId }] : [])] as const,
   decks: ['decks'] as const,
   deck: (deckId: number | string) => ['decks', String(deckId)] as const,
   submission: (submissionId: string) => ['submissions', submissionId] as const,
@@ -26,18 +30,30 @@ export const keys = {
     ['problems', String(problemId), 'submissions'] as const,
   reviewDueCount: ['review', 'due-count'] as const,
   reviewQueue: ['review', 'queue'] as const,
+  scoringSettings: ['settings', 'scoring'] as const,
 };
 
 /* -- drill -------------------------------------------------------------- */
 
-export function useDrillNext(enabled = true) {
+/** Pass `deckId` to scope the session to one deck; omit it for the cross-deck draw. */
+export function useDrillNext(deckId?: number, enabled = true) {
   return useQuery({
-    queryKey: keys.drillNext,
-    queryFn: ({ signal }) => api.drill.next(signal),
+    queryKey: keys.drillNext(deckId),
+    queryFn: ({ signal }) => api.drill.next(deckId, signal),
     enabled,
     // A drill is a point-in-time draw; never serve a stale one.
     staleTime: 0,
     gcTime: 0,
+    retry: false,
+  });
+}
+
+export function useDrillDueCount(deckId?: number, enabled = true) {
+  return useQuery({
+    queryKey: keys.drillDueCount(deckId),
+    queryFn: ({ signal }) => api.drill.dueCount(deckId, signal),
+    enabled,
+    staleTime: 30_000,
     retry: false,
   });
 }
@@ -47,7 +63,8 @@ export function useSubmitDrill() {
   return useMutation({
     mutationFn: (input: DrillSubmitInput) => api.drill.submit(input),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: keys.drillDueCount });
+      // Prefix match — clears both the scoped and unscoped due counts.
+      void queryClient.invalidateQueries({ queryKey: keys.drillDueCount() });
       void queryClient.invalidateQueries({ queryKey: keys.reviewDueCount });
       void queryClient.invalidateQueries({ queryKey: keys.reviewQueue });
     },
@@ -159,6 +176,36 @@ export function useCommitSubmission(submissionId: string) {
       void queryClient.invalidateQueries({ queryKey: keys.reviewDueCount });
       void queryClient.invalidateQueries({ queryKey: keys.reviewQueue });
       void queryClient.invalidateQueries({ queryKey: keys.decks });
+    },
+  });
+}
+
+/* -- settings ---------------------------------------------------------- */
+
+export function useScoringSettings() {
+  return useQuery({
+    queryKey: keys.scoringSettings,
+    queryFn: ({ signal }) => api.settings.scoring(signal),
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateScoringSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ScoringThresholdsInput) => api.settings.updateScoring(input),
+    onSuccess: (result) => {
+      queryClient.setQueryData(keys.scoringSettings, result);
+    },
+  });
+}
+
+export function useResetScoringSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.settings.resetScoring(),
+    onSuccess: (result) => {
+      queryClient.setQueryData(keys.scoringSettings, result);
     },
   });
 }

@@ -44,6 +44,7 @@ export function DeckDetailPage() {
 
   const dueCount = deck.data.problems.filter((problem) => isDue(problem.dueAt)).length;
   const editable = !deck.data.isSystem;
+  const hasProblems = deck.data.problems.length > 0;
 
   return (
     <div className="space-y-6">
@@ -58,15 +59,24 @@ export function DeckDetailPage() {
           </>
         }
         actions={
-          editable ? (
-            <Button
-              variant={adding ? 'ghost' : 'primary'}
-              size="sm"
-              onClick={() => setAdding(!adding)}
-            >
-              {adding ? 'Cancel' : 'Add a problem'}
-            </Button>
-          ) : null
+          <>
+            {hasProblems ? (
+              <Link to={`/drill?deckId=${deckId}`}>
+                <Button variant="secondary" size="sm">
+                  Drill this deck
+                </Button>
+              </Link>
+            ) : null}
+            {editable ? (
+              <Button
+                variant={adding ? 'ghost' : 'primary'}
+                size="sm"
+                onClick={() => setAdding(!adding)}
+              >
+                {adding ? 'Cancel' : 'Add a problem'}
+              </Button>
+            ) : null}
+          </>
         }
       />
 
